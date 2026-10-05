@@ -49,7 +49,9 @@ if ! craft install/check >/dev/null 2>&1; then
 fi
 
 echo "[demo] Applying migrations and project config…"
-craft up > /dev/null
+if ! craft up > /tmp/up.log 2>&1; then
+  echo "[demo] craft up failed:"; tail -20 /tmp/up.log; exit 1
+fi
 craft plugin/install ckeditor > /dev/null 2>&1
 craft plugin/install supertext-translation > /dev/null 2>&1
 craft supertext-demo/setup
