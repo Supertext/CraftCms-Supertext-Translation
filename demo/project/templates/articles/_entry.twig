@@ -1,0 +1,17 @@
+{% extends '_layout' %}
+{% block title %}{{ entry.title }} – Supertext Craft Demo{% endblock %}
+{% block content %}
+    <article>
+        <h1>{{ entry.title }}</h1>
+        <p class="summary">{{ entry.summary|nl2br }}</p>
+        {{ entry.body }}
+        {% set highlights = entry.highlights.all() %}
+        {% if highlights|length %}
+            <div class="highlights">
+                {% for item in highlights %}
+                    <div><strong>{{ item.title }}</strong><br>{{ item.text|nl2br }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </article>
+{% endblock %}

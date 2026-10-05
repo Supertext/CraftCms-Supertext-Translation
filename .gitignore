@@ -1,0 +1,10 @@
+/vendor/
+/composer.lock
+/.phpunit.cache/
+node_modules/
+/demo/project/vendor/
+/demo/project/web/cpresources/
+/demo/project/storage/*
+!/demo/project/storage/.gitkeep
+/demo/project/config/project/
+.env

@@ -1,0 +1,17 @@
+.supertext-box { margin-bottom: 14px; }
+.supertext-box legend { display: flex; align-items: center; gap: 6px; }
+.supertext-logo { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; border-radius: 3px; background: #e2001a; color: #fff; font-size: 10px; font-weight: 700; }
+.supertext-body { padding: 10px 12px !important; }
+.supertext-body .st-label { color: var(--light-text-color, #606d7b); font-size: 12px; margin: 0 0 4px; }
+.supertext-body .st-source { margin: 0 0 10px; font-weight: 600; }
+.supertext-body .st-site { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin: 0 0 6px; }
+.supertext-body .st-chip { font-size: 11px; padding: 1px 6px; border-radius: 10px; background: var(--gray-100, #edf3fa); color: var(--light-text-color, #606d7b); }
+.supertext-body .st-warning { border-left: 3px solid var(--warning-color, #ce5c00); background: #fff7ed; padding: 8px 10px; margin: 10px 0; font-size: 12px; }
+.supertext-body .st-warning p { margin: 4px 0 0; }
+.supertext-body .st-hint { color: var(--light-text-color, #606d7b); font-size: 12px; margin: 10px 0; }
+.supertext-body .st-results { list-style: none; margin: 10px 0 0; padding: 0; }
+.supertext-body .st-results li { margin: 4px 0; font-size: 13px; }
+.supertext-body .st-results .ok::before { content: '✓ '; color: var(--success-color, #27ab83); }
+.supertext-body .st-results .skipped::before { content: '– '; }
+.supertext-body .st-results .error { color: var(--error-color, #cf1124); }
+.supertext-body .st-results .error::before { content: '✕ '; }

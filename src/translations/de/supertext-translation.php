@@ -1,0 +1,57 @@
+<?php
+
+/** German strings for Supertext Translation (control panel language "Deutsch"). */
+return [
+    // Service, controller, actions
+    'Already translated.' => 'Bereits übersetzt.',
+    'Choose at least one site.' => 'Wählen Sie mindestens eine Website.',
+    'Connected. The API key works.' => 'Verbunden. Der API-Schlüssel funktioniert.',
+    'No Supertext API key is configured. Set it in the plugin settings (usually as $SUPERTEXT_API_KEY).' => 'Es ist kein Supertext-API-Schlüssel eingerichtet. Legen Sie ihn in den Plugin-Einstellungen fest (meist als $SUPERTEXT_API_KEY).',
+    'The entry is not available in this site.' => 'Der Eintrag ist auf dieser Website nicht verfügbar.',
+    'The entry was not found.' => 'Der Eintrag wurde nicht gefunden.',
+    'The translation could not be saved: {errors}' => 'Die Übersetzung konnte nicht gespeichert werden: {errors}',
+    'Translate entries with Supertext' => 'Einträge mit Supertext übersetzen',
+    'Translate the selected entries into all their other sites? Sites that already have their own text are skipped.' => 'Die ausgewählten Einträge in alle ihre anderen Websites übersetzen? Websites mit eigenem Text werden übersprungen.',
+    'Translate with Supertext' => 'Mit Supertext übersetzen',
+    'Translated with Supertext from {site}' => 'Mit Supertext aus {site} übersetzt',
+    'Translating entry {id} with Supertext' => 'Eintrag {id} wird mit Supertext übersetzt',
+    'You are not allowed to edit the entry in this site.' => 'Sie dürfen den Eintrag auf dieser Website nicht bearbeiten.',
+    'You are not allowed to translate with Supertext.' => 'Sie dürfen nicht mit Supertext übersetzen.',
+    '{count, plural, =1{One entry is} other{# entries are}} being translated in the background.' => '{count, plural, =1{Ein Eintrag wird} other{# Einträge werden}} im Hintergrund übersetzt.',
+
+    // Settings
+    'API address in use:' => 'Verwendete API-Adresse:',
+    'API key' => 'API-Schlüssel',
+    'Checks the saved API key against the Supertext API. Nothing is translated or charged.' => 'Prüft den gespeicherten API-Schlüssel bei der Supertext-API. Es wird nichts übersetzt oder verrechnet.',
+    'Connection' => 'Verbindung',
+    'Custom API address' => 'Eigene API-Adresse',
+    'Default' => 'Standard',
+    'Each site is translated into its language. Change the Supertext language code if Supertext needs a different one, and choose the form of address.' => 'Jede Website wird in ihre Sprache übersetzt. Ändern Sie den Supertext-Sprachcode, falls Supertext einen anderen braucht, und wählen Sie die Anrede.',
+    'Form of address' => 'Anrede',
+    'Formal (Sie, vous)' => 'Formell (Sie, vous)',
+    'Informal (du, tu)' => 'Informell (du, tu)',
+    'Languages' => 'Sprachen',
+    'Only needed for a proxy or a test server. Overrides the choice above.' => 'Nur für einen Proxy oder einen Testserver nötig. Ersetzt die Auswahl oben.',
+    'Seconds to wait for the translation of one site.' => 'Sekunden, die auf die Übersetzung einer Website gewartet wird.',
+    'Supertext API' => 'Supertext-API',
+    'Supertext language' => 'Supertext-Sprache',
+    'Test connection' => 'Verbindung testen',
+    'Timeout' => 'Zeitlimit',
+    'Your Supertext API key (Supertext → Account → API). Use an environment variable such as `$SUPERTEXT_API_KEY` so the key stays out of the project config. With or without the `Supertext-Auth-Key` prefix.' => 'Ihr Supertext-API-Schlüssel (Supertext → Konto → API). Verwenden Sie eine Umgebungsvariable wie `$SUPERTEXT_API_KEY`, damit der Schlüssel nicht in der Projektkonfiguration landet. Mit oder ohne Präfix `Supertext-Auth-Key`.',
+
+    // Edit page box (JavaScript)
+    'From' => 'Aus',
+    'Into' => 'In',
+    'Already translated' => 'Bereits übersetzt',
+    'Translated with Supertext on {date}' => 'Am {date} mit Supertext übersetzt',
+    'Overwrite existing translations' => 'Bestehende Übersetzungen überschreiben',
+    'Changes made to those translations are replaced by a new translation. Leave this off to translate only the sites without their own text.' => 'Änderungen an diesen Übersetzungen werden durch eine neue Übersetzung ersetzt. Ausgeschaltet lassen, um nur Websites ohne eigenen Text zu übersetzen.',
+    'Supertext translates the saved version of this site. Save your changes first.' => 'Supertext übersetzt die gespeicherte Fassung dieser Website. Speichern Sie Ihre Änderungen zuerst.',
+    'Translate' => 'Übersetzen',
+    'Translating…' => 'Wird übersetzt …',
+    'translated' => 'übersetzt',
+    'already translated, skipped' => 'bereits übersetzt, übersprungen',
+    'Open' => 'Öffnen',
+    'Supertext is not set up yet: an administrator needs to add the API key in the plugin settings.' => 'Supertext ist noch nicht eingerichtet: Eine Administratorin oder ein Administrator muss den API-Schlüssel in den Plugin-Einstellungen eintragen.',
+    'This entry exists in no other site you can edit.' => 'Dieser Eintrag existiert auf keiner anderen Website, die Sie bearbeiten dürfen.',
+];

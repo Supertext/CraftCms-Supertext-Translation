@@ -1,0 +1,118 @@
+{% import '_includes/forms' as forms %}
+
+{{ forms.autosuggestField({
+    label: 'API key'|t('supertext-translation'),
+    instructions: 'Your Supertext API key (Supertext → Account → API). Use an environment variable such as `$SUPERTEXT_API_KEY` so the key stays out of the project config. With or without the `Supertext-Auth-Key` prefix.'|t('supertext-translation'),
+    id: 'apiKey',
+    name: 'apiKey',
+    value: settings.apiKey,
+    suggestEnvVars: true,
+    required: true,
+}) }}
+
+{{ forms.selectField({
+    label: 'Supertext API'|t('supertext-translation'),
+    id: 'environment',
+    name: 'environment',
+    value: settings.environment,
+    options: [
+        { value: 'live', label: 'Live (api.supertext.com)' },
+        { value: 'staging', label: 'Staging' },
+        { value: 'testing', label: 'Testing' },
+    ],
+}) }}
+
+{{ forms.autosuggestField({
+    label: 'Custom API address'|t('supertext-translation'),
+    instructions: 'Only needed for a proxy or a test server. Overrides the choice above.'|t('supertext-translation'),
+    id: 'apiUrl',
+    name: 'apiUrl',
+    value: settings.apiUrl,
+    suggestEnvVars: true,
+    placeholder: 'https://api.supertext.com/v1/',
+}) }}
+
+<div class="field" data-supertext-test>
+    <div class="heading"><label>{{ 'Connection'|t('supertext-translation') }}</label></div>
+    <div class="instructions"><p>{{ 'Checks the saved API key against the Supertext API. Nothing is translated or charged.'|t('supertext-translation') }}</p></div>
+    <div class="flex">
+        <button type="button" class="btn" data-supertext-test-button>{{ 'Test connection'|t('supertext-translation') }}</button>
+        <span data-supertext-test-result aria-live="polite"></span>
+    </div>
+    <p class="light">{{ 'API address in use:'|t('supertext-translation') }} <code>{{ settings.getBaseUrl() }}</code></p>
+</div>
+
+<hr>
+
+<h2>{{ 'Languages'|t('supertext-translation') }}</h2>
+<p>{{ 'Each site is translated into its language. Change the Supertext language code if Supertext needs a different one, and choose the form of address.'|t('supertext-translation') }}</p>
+<table class="data fullwidth" data-supertext-languages>
+    <thead>
+        <tr>
+            <th>{{ 'Site'|t('app') }}</th>
+            <th>{{ 'Language'|t('app') }}</th>
+            <th>{{ 'Supertext language'|t('supertext-translation') }}</th>
+            <th>{{ 'Form of address'|t('supertext-translation') }}</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for site in sites %}
+            {% set config = settings.languages[site.handle] ?? {} %}
+            <tr>
+                <td>{{ site.name }}</td>
+                <td><code>{{ site.language }}</code></td>
+                <td>
+                    {{ forms.text({
+                        name: 'languages[' ~ site.handle ~ '][code]',
+                        value: config.code ?? '',
+                        placeholder: site.language,
+                        size: 10,
+                    }) }}
+                </td>
+                <td>
+                    {{ forms.select({
+                        name: 'languages[' ~ site.handle ~ '][politeness]',
+                        value: config.politeness ?? 'default',
+                        options: [
+                            { value: 'default', label: 'Default'|t('supertext-translation') },
+                            { value: 'more', label: 'Formal (Sie, vous)'|t('supertext-translation') },
+                            { value: 'less', label: 'Informal (du, tu)'|t('supertext-translation') },
+                        ],
+                    }) }}
+                </td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{{ forms.textField({
+    label: 'Timeout'|t('supertext-translation'),
+    instructions: 'Seconds to wait for the translation of one site.'|t('supertext-translation'),
+    id: 'timeout',
+    name: 'timeout',
+    value: settings.timeout,
+    type: 'number',
+    size: 6,
+}) }}
+
+{% js %}
+(function () {
+    const button = document.querySelector('[data-supertext-test-button]');
+    const result = document.querySelector('[data-supertext-test-result]');
+    button.addEventListener('click', async () => {
+        button.classList.add('loading');
+        result.className = '';
+        result.textContent = '';
+        try {
+            const response = await Craft.sendActionRequest('POST', 'supertext-translation/translate/test-connection');
+            result.className = 'success';
+            result.textContent = '✓ ' + response.data.message;
+        } catch (e) {
+            result.className = 'error';
+            result.textContent = e?.response?.data?.message ?? String(e);
+        } finally {
+            button.classList.remove('loading');
+        }
+    });
+})();
+{% endjs %}

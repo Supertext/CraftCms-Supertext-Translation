@@ -1,0 +1,41 @@
+{
+  "name": "supertext/craft-supertext-translation",
+  "description": "Supertext AI translation for Craft CMS: translate entries into your other sites with one click",
+  "type": "craft-plugin",
+  "license": "MIT",
+  "keywords": ["craft", "craftcms", "craft-plugin", "translation", "localization", "supertext", "ai"],
+  "authors": [{ "name": "Supertext AG", "homepage": "https://www.supertext.com" }],
+  "support": {
+    "issues": "https://github.com/Supertext/CraftCms-Supertext-Translation/issues",
+    "source": "https://github.com/Supertext/CraftCms-Supertext-Translation",
+    "docs": "https://github.com/Supertext/CraftCms-Supertext-Translation/tree/main/docs"
+  },
+  "require": {
+    "php": "^8.2",
+    "craftcms/cms": "^5.0"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^10.5"
+  },
+  "autoload": {
+    "psr-4": { "supertext\\crafttranslation\\": "src/" }
+  },
+  "autoload-dev": {
+    "psr-4": { "supertext\\crafttranslation\\tests\\": "tests/" }
+  },
+  "extra": {
+    "handle": "supertext-translation",
+    "name": "Supertext Translation",
+    "developer": "Supertext AG",
+    "developerUrl": "https://www.supertext.com",
+    "documentationUrl": "https://github.com/Supertext/CraftCms-Supertext-Translation/tree/main/docs",
+    "class": "supertext\\crafttranslation\\Plugin"
+  },
+  "scripts": {
+    "test": "phpunit --colors=always"
+  },
+  "config": {
+    "allow-plugins": { "craftcms/plugin-installer": true, "yiisoft/yii2-composer": true },
+    "sort-packages": true
+  }
+}

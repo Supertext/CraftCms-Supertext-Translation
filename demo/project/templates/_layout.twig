@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="{{ currentSite.language }}">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Supertext Craft Demo{% endblock %}</title>
+    <style>
+        body { font: 17px/1.6 system-ui, sans-serif; margin: 0; color: #1f2933; background: #f7f8fa; }
+        header, main, footer { max-width: 720px; margin: 0 auto; padding: 16px 20px; }
+        header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
+        header a { color: inherit; text-decoration: none; font-weight: 600; }
+        nav a { margin-left: 12px; font-weight: 400; color: #52606d; }
+        nav a[aria-current] { color: #e2001a; font-weight: 600; }
+        article { background: #fff; border-radius: 8px; padding: 24px 28px; box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+        .summary { font-size: 19px; color: #52606d; }
+        .highlights { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); margin-top: 24px; }
+        .highlights div { background: #f1f5f9; border-radius: 6px; padding: 12px 16px; }
+        footer { color: #7b8794; font-size: 14px; }
+    </style>
+</head>
+<body>
+<header>
+    <a href="{{ siteUrl }}">Supertext Craft Demo</a>
+    <nav>
+        {% for site in craft.app.sites.getAllSites() %}
+            {% set other = entry is defined ? craft.entries.id(entry.id).siteId(site.id).one() : null %}
+            <a href="{{ other ? other.url : site.baseUrl }}" hreflang="{{ site.language }}" {{ site.id == currentSite.id ? 'aria-current="page"' }}>{{ site.language|split('-')|first|upper }}</a>
+        {% endfor %}
+    </nav>
+</header>
+<main>{% block content %}{% endblock %}</main>
+<footer>Demo of <a href="https://github.com/Supertext/CraftCms-Supertext-Translation">Supertext Translation for Craft CMS</a>.</footer>
+</body>
+</html>

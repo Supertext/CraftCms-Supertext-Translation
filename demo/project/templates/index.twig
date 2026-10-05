@@ -1,0 +1,11 @@
+{% extends '_layout' %}
+{% block content %}
+    {% for entry in craft.entries.section('articles').all() %}
+        <article>
+            <h1><a href="{{ entry.url }}">{{ entry.title }}</a></h1>
+            <p class="summary">{{ entry.summary }}</p>
+        </article>
+    {% else %}
+        <p>No articles yet.</p>
+    {% endfor %}
+{% endblock %}

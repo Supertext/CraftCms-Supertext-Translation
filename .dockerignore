@@ -1,0 +1,11 @@
+.git
+vendor
+node_modules
+tests/docs/node_modules
+demo/project/vendor
+demo/project/storage/*
+!demo/project/storage/.gitkeep
+demo/project/web/cpresources
+demo/project/config/project
+demo/project/.env
+docs/images

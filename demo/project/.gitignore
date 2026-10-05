@@ -1,0 +1,6 @@
+/vendor/
+/storage/*
+!/storage/.gitkeep
+/web/cpresources/
+/config/project/
+.env
