@@ -20,6 +20,10 @@ export CRAFT_ENVIRONMENT="${CRAFT_ENVIRONMENT:-production}"
 
 craft() { runuser -u www-data -- php craft "$@" --interactive=0; }
 
+# Later `php craft` calls (docker exec, Railway shell) read the same settings from .env (container only).
+env | grep -E '^(CRAFT_[A-Z_]+|PRIMARY_SITE_URL)=' | sed -E "s/^([A-Z_]+)=(.*)$/\1='\2'/" > .env
+chown www-data:www-data .env && chmod 600 .env
+
 chown -R www-data:www-data storage web config
 mkdir -p web/cpresources && chown www-data:www-data web/cpresources
 
