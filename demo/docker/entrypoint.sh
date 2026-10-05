@@ -52,8 +52,9 @@ echo "[demo] Applying migrations and project config…"
 if ! craft up > /tmp/up.log 2>&1; then
   echo "[demo] craft up failed:"; tail -20 /tmp/up.log; exit 1
 fi
-craft plugin/install ckeditor > /dev/null 2>&1
-craft plugin/install supertext-translation > /dev/null 2>&1
+# `plugin/install` exits non-zero when the plugin is already installed.
+craft plugin/install ckeditor > /dev/null 2>&1 || true
+craft plugin/install supertext-translation > /dev/null 2>&1 || true
 craft supertext-demo/setup
 echo "[demo] Starting Apache on port ${PORT:-8080}."
 
