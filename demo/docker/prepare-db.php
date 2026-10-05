@@ -26,7 +26,7 @@ $serverDb = ltrim($parts['path'] ?? '/postgres', '/') ?: 'postgres';
 
 for ($attempt = 1; ; $attempt++) {
     try {
-        $pdo = new PDO("pgsql:host={$host};port={$port};dbname={$serverDb}", $user, $password, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
+        $pdo = new PDO("pgsql:host={$host};port={$port};dbname={$serverDb};connect_timeout=5", $user, $password, [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]);
         break;
     } catch (PDOException $e) {
         if ($attempt >= 30) {

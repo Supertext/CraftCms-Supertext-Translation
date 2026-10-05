@@ -4,6 +4,7 @@
 set -euo pipefail
 cd /app/demo/project
 
+echo "[demo] Starting (database, migrations, demo setup)…"
 eval "$(php /app/demo/docker/prepare-db.php)"
 
 if [ -n "${RAILWAY_PUBLIC_DOMAIN:-}" ] && [ -z "${PRIMARY_SITE_URL:-}" ]; then
@@ -47,10 +48,12 @@ if ! craft install/check >/dev/null 2>&1; then
   unset ADMIN_EMAIL ADMIN_PASSWORD
 fi
 
+echo "[demo] Applying migrations and project config…"
 craft up > /dev/null
 craft plugin/install ckeditor > /dev/null 2>&1
 craft plugin/install supertext-translation > /dev/null 2>&1
 craft supertext-demo/setup
+echo "[demo] Starting Apache on port ${PORT:-8080}."
 
 # Exactly one Apache MPM (prefork, for mod_php).
 rm -f /etc/apache2/mods-enabled/mpm_event.* /etc/apache2/mods-enabled/mpm_worker.*
