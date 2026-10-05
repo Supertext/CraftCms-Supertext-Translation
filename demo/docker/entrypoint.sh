@@ -48,10 +48,12 @@ if ! craft install/check >/dev/null 2>&1; then
 fi
 
 craft up > /dev/null
-craft plugin/install ckeditor > /dev/null
-craft plugin/install supertext-translation > /dev/null
+craft plugin/install ckeditor > /dev/null 2>&1
+craft plugin/install supertext-translation > /dev/null 2>&1
 craft supertext-demo/setup
 
+# Exactly one Apache MPM (prefork, for mod_php).
+rm -f /etc/apache2/mods-enabled/mpm_event.* /etc/apache2/mods-enabled/mpm_worker.*
 sed -ri "s/Listen [0-9]+/Listen ${PORT:-8080}/" /etc/apache2/ports.conf
 sed -ri "s/<VirtualHost \*:[0-9]+>/<VirtualHost *:${PORT:-8080}>/" /etc/apache2/sites-available/000-default.conf
 exec apache2-foreground

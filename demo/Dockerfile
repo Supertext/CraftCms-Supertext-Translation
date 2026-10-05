@@ -4,7 +4,8 @@ FROM public.ecr.aws/docker/library/php:8.3-apache
 
 ADD --chmod=0755 https://github.com/mlocati/docker-php-extension-installer/releases/download/2.9.7/install-php-extensions /usr/local/bin/
 RUN install-php-extensions pdo_pgsql intl gd zip bcmath opcache \
- && a2enmod rewrite headers \
+ && (a2dismod -f mpm_event mpm_worker >/dev/null 2>&1 || true) \
+ && a2enmod mpm_prefork rewrite headers \
  && printf 'memory_limit=256M\nmax_execution_time=300\nupload_max_filesize=16M\npost_max_size=16M\n' > /usr/local/etc/php/conf.d/craft.ini \
  && sed -ri 's#/var/www/html#/app/demo/project/web#g' /etc/apache2/sites-available/000-default.conf /etc/apache2/apache2.conf \
  && printf '<Directory /app/demo/project/web>\n  AllowOverride All\n  Require all granted\n</Directory>\n' > /etc/apache2/conf-enabled/craft.conf
