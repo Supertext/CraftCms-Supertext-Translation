@@ -6,7 +6,7 @@ return [
     'Already translated.' => 'Bereits übersetzt.',
     'Choose at least one site.' => 'Wählen Sie mindestens eine Website.',
     'Connected. The API key works.' => 'Verbunden. Der API-Schlüssel funktioniert.',
-    'No Supertext API key is configured. Set it in the plugin settings (usually as $SUPERTEXT_API_KEY).' => 'Es ist kein Supertext-API-Schlüssel eingerichtet. Legen Sie ihn in den Plugin-Einstellungen fest (meist als $SUPERTEXT_API_KEY).',
+    'No Supertext API key is configured. Set it in the plugin settings (usually as $SUPERTEXT_API_KEY). Generate a key at {url} (requires the Admin role in your Supertext account).' => 'Es ist kein Supertext-API-Schlüssel eingerichtet. Legen Sie ihn in den Plugin-Einstellungen fest (meist als $SUPERTEXT_API_KEY). Einen Schlüssel erstellen Sie unter {url} (dafür brauchen Sie die Admin-Rolle in Ihrem Supertext-Konto).',
     'The entry is not available in this site.' => 'Der Eintrag ist auf dieser Website nicht verfügbar.',
     'The entry was not found.' => 'Der Eintrag wurde nicht gefunden.',
     'The translation could not be saved: {errors}' => 'Die Übersetzung konnte nicht gespeichert werden: {errors}',
@@ -27,6 +27,7 @@ return [
     'Custom API address' => 'Eigene API-Adresse',
     'Default' => 'Standard',
     'Each site is translated into its language. Change the Supertext language code if Supertext needs a different one, and choose the form of address.' => 'Jede Website wird in ihre Sprache übersetzt. Ändern Sie den Supertext-Sprachcode, falls Supertext einen anderen braucht, und wählen Sie die Anrede.',
+    'No Supertext account yet? <a href="{signupUrl}" target="_blank" rel="noopener">Create one at supertext.com</a>. Generate your API key at <a href="{apiKeyUrl}" target="_blank" rel="noopener">supertext.com → Integrations → API</a> (requires the Admin role). Use an environment variable such as `$SUPERTEXT_API_KEY` so the key stays out of the project config. With or without the `Supertext-Auth-Key` prefix.' => 'Noch kein Supertext-Konto? <a href="{signupUrl}" target="_blank" rel="noopener">Erstellen Sie eines auf supertext.com</a>. Ihren API-Schlüssel erstellen Sie unter <a href="{apiKeyUrl}" target="_blank" rel="noopener">supertext.com → Integrationen → API</a> (dafür brauchen Sie die Admin-Rolle). Verwenden Sie eine Umgebungsvariable wie `$SUPERTEXT_API_KEY`, damit der Schlüssel nicht in der Projektkonfiguration landet. Mit oder ohne Präfix `Supertext-Auth-Key`.',
     'Form of address' => 'Anrede',
     'Formal (Sie, vous)' => 'Formell (Sie, vous)',
     'Informal (du, tu)' => 'Informell (du, tu)',
@@ -37,7 +38,6 @@ return [
     'Supertext language' => 'Supertext-Sprache',
     'Test connection' => 'Verbindung testen',
     'Timeout' => 'Zeitlimit',
-    'Your Supertext API key (Supertext → Account → API). Use an environment variable such as `$SUPERTEXT_API_KEY` so the key stays out of the project config. With or without the `Supertext-Auth-Key` prefix.' => 'Ihr Supertext-API-Schlüssel (Supertext → Konto → API). Verwenden Sie eine Umgebungsvariable wie `$SUPERTEXT_API_KEY`, damit der Schlüssel nicht in der Projektkonfiguration landet. Mit oder ohne Präfix `Supertext-Auth-Key`.',
 
     // Edit page box (JavaScript)
     'From' => 'Aus',

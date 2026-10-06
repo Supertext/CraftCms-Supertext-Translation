@@ -7,7 +7,7 @@ For administrators who install and set up the plugin. Editors find their part in
 - Craft CMS 5 (any edition; giving editors their own permissions needs user groups, i.e. Craft Team or Pro), PHP 8.2 or later
 - A multi-site setup: one site per language, e.g. *English* (`en-US`), *Deutsch* (`de-CH`), *Français* (`fr-CH`)
 - Sections whose entries exist in those sites (*Propagation method* other than "Only save entries to the site they were created in")
-- A Supertext account with an API key (Supertext → Account → API)
+- A Supertext account with an API key (see [API key](#api-key))
 - The server must reach `https://api.supertext.com` over HTTPS
 
 ## Install
@@ -34,6 +34,13 @@ php craft up
 *Settings → Plugins → Supertext Translation → Uninstall* (or `php craft plugin/uninstall supertext-translation`), then `composer remove supertext/craft-supertext-translation`. Translations already made are normal entry content and stay; only the plugin's table and settings are removed.
 
 ## API key
+
+You need a Supertext account and an API key:
+
+- **Account**: no Supertext account yet? [Log in or create a Supertext account](https://www.supertext.com/person/en/account/signin) with your e-mail address.
+- **API key**: generate it at [supertext.com → Integrations → API](https://www.supertext.com/en/integrations/api). This requires the **Admin** role in your Supertext account; ask your Supertext admin if you don't see the page.
+
+The **API key** field in the plugin settings links to both pages.
 
 1. Add the key to the server's environment, e.g. in `.env`:
 

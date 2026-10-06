@@ -9,7 +9,7 @@
 - Saves each translation as a new revision ("Translated with Supertext from …").
 - Entry index action *Translate with Supertext* (queue; sites without their own text only).
 - Permission *Translate entries with Supertext*; the editor's site and section permissions are checked.
-- Settings: API key (environment variable reference, with or without the `Supertext-Auth-Key` prefix), Live/Staging/Testing API or a custom address, Supertext language and form of address per site, timeout, *Test connection*.
+- Settings: API key (environment variable reference, with or without the `Supertext-Auth-Key` prefix; the field links to the Supertext signup and the API key page, *supertext.com → Integrations → API*, Admin role required), Live/Staging/Testing API or a custom address, Supertext language and form of address per site, timeout, *Test connection*.
 - Console commands `supertext-translation/translate` and `supertext-translation/translate/check`.
 - Retries when the Supertext API answers HTTP 429 (rate limit).
 - English and German control panel texts.

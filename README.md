@@ -22,7 +22,7 @@ Open an entry, tick the sites to translate into and click **Translate**: the tit
 | [User guide](docs/USER_GUIDE.md) | Editors: translating, reviewing, overwriting, bulk translation, what gets translated |
 | [Developer guide](docs/DEVELOPER.md) | Architecture, API protocol, local development, tests, demo deployment, releases |
 
-Quick start:
+Quick start (you need a [Supertext account](https://www.supertext.com/person/en/account/signin) and an API key from [supertext.com → Integrations → API](https://www.supertext.com/en/integrations/api), which requires the Admin role):
 
 ```bash
 composer config repositories.supertext vcs https://github.com/Supertext/CraftCms-Supertext-Translation

@@ -154,7 +154,7 @@ class Translator extends Component
     {
         $settings = Plugin::getInstance()->getSettings();
         if ($settings->getApiKey() === '') {
-            throw new SupertextException(Craft::t('supertext-translation', 'No Supertext API key is configured. Set it in the plugin settings (usually as $SUPERTEXT_API_KEY).'));
+            throw new SupertextException(Craft::t('supertext-translation', 'No Supertext API key is configured. Set it in the plugin settings (usually as $SUPERTEXT_API_KEY). Generate a key at {url} (requires the Admin role in your Supertext account).', ['url' => 'https://www.supertext.com/en/integrations/api']));
         }
 
         return new SupertextClient(

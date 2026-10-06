@@ -2,7 +2,10 @@
 
 {{ forms.autosuggestField({
     label: 'API key'|t('supertext-translation'),
-    instructions: 'Your Supertext API key (Supertext → Account → API). Use an environment variable such as `$SUPERTEXT_API_KEY` so the key stays out of the project config. With or without the `Supertext-Auth-Key` prefix.'|t('supertext-translation'),
+    instructions: 'No Supertext account yet? <a href="{signupUrl}" target="_blank" rel="noopener">Create one at supertext.com</a>. Generate your API key at <a href="{apiKeyUrl}" target="_blank" rel="noopener">supertext.com → Integrations → API</a> (requires the Admin role). Use an environment variable such as `$SUPERTEXT_API_KEY` so the key stays out of the project config. With or without the `Supertext-Auth-Key` prefix.'|t('supertext-translation', {
+        signupUrl: 'https://www.supertext.com/person/en/account/signin',
+        apiKeyUrl: 'https://www.supertext.com/en/integrations/api',
+    }),
     id: 'apiKey',
     name: 'apiKey',
     value: settings.apiKey,
