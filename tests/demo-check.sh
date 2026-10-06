@@ -21,8 +21,9 @@ start() {
 
 start
 start   # second start: nothing duplicated or changed
-docker logs demo 2>&1 | grep -q 'DEMO_EDITOR: account exists, left unchanged'
-if docker logs demo 2>&1 | grep -qF -e "$DEMO_ADMIN_PASSWORD" -e "$DEMO_EDITOR_PASSWORD"; then echo "A password appeared in the log"; exit 1; fi
+docker logs demo 2>&1 | grep > /dev/null 'DEMO_EDITOR: account exists, left unchanged'
+logs=$(docker logs demo 2>&1)
+if grep -qF -e "$DEMO_ADMIN_PASSWORD" -e "$DEMO_EDITOR_PASSWORD" <<< "$logs"; then echo "A password appeared in the log"; exit 1; fi
 
 test "$(sql "select string_agg(email, ',' order by email) from users")" = "ci-admin@example.com,ci-editor@example.com"
 test "$(sql "select admin from users where email='ci-admin@example.com'")" = "t"
@@ -35,11 +36,11 @@ test "$(grep -c ': translated' /tmp/translate.log)" = 3
 
 test "$(sql "select es.title from elements_sites es join sites s on s.id=es.\"siteId\" where es.\"elementId\"=$ENTRY and s.handle='de'")" = "Schweizer Schokolade, weltweit versandt"
 test "$(sql "select es.slug from elements_sites es join sites s on s.id=es.\"siteId\" where es.\"elementId\"=$ENTRY and s.handle='fr'")" = "chocolat-suisse-expedie-dans-le-monde-entier"
-sql "select es.content::text from elements_sites es join sites s on s.id=es.\"siteId\" where es.\"elementId\"=$ENTRY and s.handle='de'" | grep -q '<strong>Berner</strong>'
+sql "select es.content::text from elements_sites es join sites s on s.id=es.\"siteId\" where es.\"elementId\"=$ENTRY and s.handle='de'" | grep > /dev/null '<strong>Berner</strong>'
 # Nested Matrix entries are translated too.
-sql "select es.title from elements_sites es join sites s on s.id=es.\"siteId\" join entries e on e.id=es.\"elementId\" where e.\"primaryOwnerId\"=$ENTRY and s.handle='de'" | grep -q 'Handgefertigt in Bern'
+sql "select es.title from elements_sites es join sites s on s.id=es.\"siteId\" join entries e on e.id=es.\"elementId\" where e.\"primaryOwnerId\"=$ENTRY and s.handle='de'" | grep > /dev/null 'Handgefertigt in Bern'
 
 # A second run skips the sites that now have their own text.
-docker exec demo runuser -u www-data -- php craft supertext-translation/translate "$ENTRY" --from=en | grep -q 'skipped'
-curl -sf "http://127.0.0.1:$PORT/de/articles/schweizer-schokolade-weltweit-versandt" | grep -q 'Von Bern in die Welt'
+docker exec demo runuser -u www-data -- php craft supertext-translation/translate "$ENTRY" --from=en | grep > /dev/null 'skipped'
+curl -sf "http://127.0.0.1:$PORT/de/articles/schweizer-schokolade-weltweit-versandt" | grep > /dev/null 'Von Bern in die Welt'
 echo "Demo check passed"
