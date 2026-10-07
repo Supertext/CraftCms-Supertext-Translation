@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.1.0 — 2026-10-07
+
 ### Added
 - First version for Craft CMS 5.
 - *Translate with Supertext* box on the entry edit page: translate the current site's version into the entry's other sites, with "Already translated" / "Translated with Supertext on …" per site and an explicit *Overwrite existing translations* option.
