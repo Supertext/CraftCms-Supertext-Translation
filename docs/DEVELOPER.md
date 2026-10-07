@@ -166,10 +166,14 @@ The script shows the live API address instead of the stand-in's on the settings 
 
 ## Releasing
 
-1. Move the *Unreleased* entries in `CHANGELOG.md` under the new version (Craft's plugin store reads this format).
-2. Tag `X.Y.Z` on `main`.
-3. Planned: submit the package to Packagist and the Craft Plugin Store.
+Releases are published by `.github/workflows/release.yml` when the version is officially bumped; nobody tags or creates releases by hand.
 
+1. Move the *Unreleased* entries in `CHANGELOG.md` under a new `## X.Y.Z — YYYY-MM-DD` section, and keep an empty *Unreleased* above it.
+2. There is no version field to change: Composer takes the version from the Git tag the workflow creates.
+3. Push to `main`. The workflow tags `vX.Y.Z` and creates the GitHub release with the CHANGELOG section as notes (0.x versions as pre-releases). A push that adds no new version does nothing, and a version that is already released is skipped. After fixing a failed run, start it again with *Run workflow* on the *Release* workflow.
+
+Keep the CHANGELOG format: Craft's Plugin Store reads it.
+Planned: submit the package to Packagist and the Craft Plugin Store.
 ## Conventions
 
 - PSR-12, PHP 8.2, strict types in new code; keep `src/api/` free of Craft classes.
