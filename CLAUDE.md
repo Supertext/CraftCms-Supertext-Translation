@@ -23,6 +23,10 @@ Everywhere an administrator enters or is told about the API key — the settings
 
 Wording: "No Supertext account yet? Create one at supertext.com. Generate your API key at supertext.com → Integrations → API (requires the Admin role)." In the UI, links open in a new tab (`target="_blank" rel="noopener"`); where the CMS shows plain text only, use the bare URLs. New screens or messages that mention the key get the links too.
 
+## UI languages (always)
+
+The plugin's own UI (buttons, panels, dialogs, settings, permissions, messages) is available in English, German, French and Italian through the CMS's own translation mechanism, so it follows the user's back-end language. New or changed strings get all four languages in the same commit. Formal address (Sie, vous, Lei), the CMS's own terms in each language, "Supertext", placeholders and URLs never translated.
+
 ## Plugin list (always)
 
 `README.md` ends with the shared list of all Supertext plugins (between the `<!-- supertext-plugins:start -->` and `<!-- supertext-plugins:end -->` markers). It is identical in every Supertext plugin repo: when a plugin is added, renamed or its description changes, update the list in **all** repos, not just this one.
@@ -74,7 +78,7 @@ Lessons from the live API, apply them here: header `Authorization: Supertext-Aut
 
 - Before committing: `vendor/bin/phpunit`, PHP lint (`find src tests demo -name '*.php' -not -path '*/vendor/*' | xargs -n1 php -l`). CI also builds the demo image and runs `tests/demo-check.sh` against PostgreSQL and the stand-in.
 - Test UI changes in the demo project (`demo/project`, see `docs/DEVELOPER.md` → Local development) and regenerate the screenshots they affect (`tests/docs/screenshots.mjs`).
-- New settings go in `src/models/Settings.php`, `src/templates/_settings.twig`, the German strings in `src/translations/de/` **and** the settings table in `docs/INSTALLATION.md`.
+- New settings go in `src/models/Settings.php`, `src/templates/_settings.twig`, the German, French and Italian strings in `src/translations/{de,fr,it}/` **and** the settings table in `docs/INSTALLATION.md`.
 - Field rules live in `src/services/Translator.php` (`collectUnits`, `kindOf`); keep "Field rules" in `docs/DEVELOPER.md` and "What is translated" in `docs/USER_GUIDE.md` in sync.
 - Keep `src/api/` free of Craft classes (unit tests run without Craft).
 - Strings used by the edit-page JavaScript must be listed in `TranslateAsset::MESSAGES`.

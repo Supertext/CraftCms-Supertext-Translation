@@ -11,6 +11,7 @@ namespace supertext\crafttranslation\controllers;
 use Craft;
 use craft\web\Controller;
 use supertext\crafttranslation\api\SupertextException;
+use supertext\crafttranslation\helpers\Messages;
 use supertext\crafttranslation\Plugin;
 use yii\web\Response;
 
@@ -72,7 +73,7 @@ class TranslateController extends Controller
                 Craft::$app->getUser()->getIdentity(),
             );
         } catch (SupertextException $e) {
-            return $this->asFailure($e->getMessage());
+            return $this->asFailure(Messages::of($e));
         }
 
         return $this->asJson(['results' => $results]);
@@ -84,7 +85,7 @@ class TranslateController extends Controller
         try {
             Plugin::getInstance()->getTranslator()->testConnection();
         } catch (SupertextException $e) {
-            return $this->asFailure($e->getMessage());
+            return $this->asFailure(Messages::of($e));
         }
 
         return $this->asSuccess(Craft::t('supertext-translation', 'Connected. The API key works.'));

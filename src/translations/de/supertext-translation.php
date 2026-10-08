@@ -1,12 +1,12 @@
 <?php
 
-/** German strings for Supertext Translation (control panel language "Deutsch"). */
+/** German strings for Supertext Translation (control panel language "Deutsch"). Keys are the English source strings. */
 return [
     // Service, controller, actions
     'Already translated.' => 'Bereits übersetzt.',
     'Choose at least one site.' => 'Wählen Sie mindestens eine Website.',
     'Connected. The API key works.' => 'Verbunden. Der API-Schlüssel funktioniert.',
-    'No Supertext API key is configured. Set it in the plugin settings (usually as $SUPERTEXT_API_KEY). Generate a key at {url} (requires the Admin role in your Supertext account).' => 'Es ist kein Supertext-API-Schlüssel eingerichtet. Legen Sie ihn in den Plugin-Einstellungen fest (meist als $SUPERTEXT_API_KEY). Einen Schlüssel erstellen Sie unter {url} (dafür brauchen Sie die Admin-Rolle in Ihrem Supertext-Konto).',
+    'No Supertext API key is configured. Set it in the plugin settings (usually as $SUPERTEXT_API_KEY). No Supertext account yet? Create one at {signupUrl}. Generate your API key at {url} (requires the Admin role).' => 'Es ist kein Supertext-API-Schlüssel eingerichtet. Legen Sie ihn in den Plugin-Einstellungen fest (meist als $SUPERTEXT_API_KEY). Noch kein Supertext-Konto? Erstellen Sie eines unter {signupUrl}. Ihren API-Schlüssel erstellen Sie unter {url} (dafür brauchen Sie die Admin-Rolle).',
     'The entry is not available in this site.' => 'Der Eintrag ist auf dieser Website nicht verfügbar.',
     'The entry was not found.' => 'Der Eintrag wurde nicht gefunden.',
     'The translation could not be saved: {errors}' => 'Die Übersetzung konnte nicht gespeichert werden: {errors}',
@@ -19,6 +19,21 @@ return [
     'You are not allowed to translate with Supertext.' => 'Sie dürfen nicht mit Supertext übersetzen.',
     '{count, plural, =1{One entry is} other{# entries are}} being translated in the background.' => '{count, plural, =1{Ein Eintrag wird} other{# Einträge werden}} im Hintergrund übersetzt.',
 
+    // Errors from the Supertext API (helpers/Messages.php)
+    'Supertext did not return a file id.' => 'Supertext hat keine Datei-ID zurückgegeben.',
+    'Supertext could not translate the document.' => 'Supertext konnte das Dokument nicht übersetzen.',
+    'Your Supertext translation limit is exceeded. Please upgrade your subscription.' => 'Ihr Supertext-Übersetzungslimit ist erreicht. Bitte erweitern Sie Ihr Abonnement.',
+    'The document was deleted at Supertext before it could be downloaded.' => 'Das Dokument wurde bei Supertext gelöscht, bevor es heruntergeladen werden konnte.',
+    'Timed out waiting for the Supertext translation.' => 'Zeitüberschreitung beim Warten auf die Supertext-Übersetzung.',
+    'The translated document was empty.' => 'Das übersetzte Dokument war leer.',
+    'Could not reach Supertext: {0}' => 'Supertext ist nicht erreichbar: {0}',
+    'Authentication failed. Please check the Supertext API key. No Supertext account yet? Create one at {signupUrl}. Generate your API key at {url} (requires the Admin role).' => 'Authentifizierung fehlgeschlagen. Bitte prüfen Sie den Supertext-API-Schlüssel. Noch kein Supertext-Konto? Erstellen Sie eines unter {signupUrl}. Ihren API-Schlüssel erstellen Sie unter {url} (dafür brauchen Sie die Admin-Rolle).',
+    'The requested Supertext resource was not found.' => 'Die angeforderte Supertext-Ressource wurde nicht gefunden.',
+    'The content is too large for Supertext to translate in one go.' => 'Der Inhalt ist zu groß, um ihn bei Supertext in einem Schritt zu übersetzen.',
+    'Too many requests to Supertext. Please try again shortly.' => 'Zu viele Anfragen an Supertext. Bitte versuchen Sie es gleich noch einmal.',
+    'The Supertext service is currently unavailable.' => 'Der Supertext-Dienst ist zurzeit nicht verfügbar.',
+    'Supertext answered with HTTP {0}.' => 'Supertext hat mit HTTP {0} geantwortet.',
+
     // Settings
     'API address in use:' => 'Verwendete API-Adresse:',
     'API key' => 'API-Schlüssel',
@@ -27,7 +42,10 @@ return [
     'Custom API address' => 'Eigene API-Adresse',
     'Default' => 'Standard',
     'Each site is translated into its language. Change the Supertext language code if Supertext needs a different one, and choose the form of address.' => 'Jede Website wird in ihre Sprache übersetzt. Ändern Sie den Supertext-Sprachcode, falls Supertext einen anderen braucht, und wählen Sie die Anrede.',
-    'No Supertext account yet? <a href="{signupUrl}" target="_blank" rel="noopener">Create one at supertext.com</a>. Generate your API key at <a href="{apiKeyUrl}" target="_blank" rel="noopener">supertext.com → Integrations → API</a> (requires the Admin role). Use an environment variable such as `$SUPERTEXT_API_KEY` so the key stays out of the project config. With or without the `Supertext-Auth-Key` prefix.' => 'Noch kein Supertext-Konto? <a href="{signupUrl}" target="_blank" rel="noopener">Erstellen Sie eines auf supertext.com</a>. Ihren API-Schlüssel erstellen Sie unter <a href="{apiKeyUrl}" target="_blank" rel="noopener">supertext.com → Integrationen → API</a> (dafür brauchen Sie die Admin-Rolle). Verwenden Sie eine Umgebungsvariable wie `$SUPERTEXT_API_KEY`, damit der Schlüssel nicht in der Projektkonfiguration landet. Mit oder ohne Präfix `Supertext-Auth-Key`.',
+    'Live (api.supertext.com)' => 'Live (api.supertext.com)',
+    'Staging' => 'Staging',
+    'Testing' => 'Test',
+    'No Supertext account yet? <a href="{signupUrl}" target="_blank" rel="noopener">Create one at supertext.com</a>. Generate your API key at <a href="{apiKeyUrl}" target="_blank" rel="noopener">supertext.com → Integrations → API</a> (requires the Admin role). Use an environment variable such as `$SUPERTEXT_API_KEY` so the key stays out of the project config. With or without the `Supertext-Auth-Key` prefix.' => 'Noch kein Supertext-Konto? <a href="{signupUrl}" target="_blank" rel="noopener">Erstellen Sie eines auf supertext.com</a>. Ihren API-Schlüssel erstellen Sie unter <a href="{apiKeyUrl}" target="_blank" rel="noopener">supertext.com → Integrations → API</a> (dafür brauchen Sie die Admin-Rolle). Verwenden Sie eine Umgebungsvariable wie `$SUPERTEXT_API_KEY`, damit der Schlüssel nicht in der Projektkonfiguration landet. Mit oder ohne Präfix `Supertext-Auth-Key`.',
     'Form of address' => 'Anrede',
     'Formal (Sie, vous)' => 'Formell (Sie, vous)',
     'Informal (du, tu)' => 'Informell (du, tu)',
@@ -39,7 +57,7 @@ return [
     'Test connection' => 'Verbindung testen',
     'Timeout' => 'Zeitlimit',
 
-    // Edit page box (JavaScript)
+    // Edit page box (JavaScript, listed in TranslateAsset::MESSAGES)
     'From' => 'Aus',
     'Into' => 'In',
     'Already translated' => 'Bereits übersetzt',

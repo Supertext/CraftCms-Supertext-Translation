@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### Added
+- French and Italian control panel texts, and German where it was missing: messages from Supertext (limit reached, authentication failed, timeouts and others) and the environment names in the settings now appear in the user's control panel language too. The "no API key" and "authentication failed" messages now also link to Supertext account sign-up.
+
 ## 0.1.0 — 2026-10-07
 
 ### Added

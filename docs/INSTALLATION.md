@@ -95,6 +95,10 @@ All settings are in *Settings → Plugins → Supertext Translation* and stored 
 
 Translated slugs follow Craft's own slug rules: set `limitAutoSlugsToAscii` in `config/general.php` to get `chocolat-suisse-expedie` instead of `chocolat-suisse-expédié`.
 
+## Interface languages
+
+The plugin's box, settings, permission and messages are available in English, German, French and Italian. They follow each user's control panel language: *My Account → Preferences → Language* (or the system default in `config/general.php`, `defaultCpLanguage`). Other languages show the English texts.
+
 ## Background translation
 
 The entry index action *Translate with Supertext* translates in Craft's queue. Craft runs the queue automatically on control panel requests; on busy or headless setups run a queue worker (`php craft queue/listen`) or a cron job (`php craft queue/run`).

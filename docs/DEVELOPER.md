@@ -34,7 +34,8 @@ apply(): set the values on the entry (and nested entries) in the target site, sa
 | `src/console/controllers/TranslateController.php` | `php craft supertext-translation/translate <entryId> [--from=en] [--to=de,fr] [--overwrite]`, `php craft supertext-translation/translate/check` |
 | `src/models/Settings.php`, `src/templates/_settings.twig` | Settings (project config; API key as `$SUPERTEXT_API_KEY`) |
 | `src/records/TranslationRecord.php`, `src/migrations/Install.php` | Table `supertext_translations`: last Supertext translation per entry and site |
-| `src/translations/de/` | German strings |
+| `src/translations/{de,fr,it}/supertext-translation.php` | German, French and Italian strings (keys are the English source strings) |
+| `src/helpers/Messages.php` | Shows a `SupertextException` from the API client in the user's language (by its `reason`), falling back to the client's English message |
 
 ### Field rules
 
@@ -94,6 +95,7 @@ vendor/bin/phpunit
 - `tests/unit/SupertextClientTest.php`: the API protocol, auth header and prefix, 429 retries, errors, clean-up.
 - `tests/unit/HtmlDocumentTest.php`: document packing and parsing, whitespace.
 - `tests/unit/ChunksTest.php`: splitting documents below the size limit.
+- `tests/unit/TranslationsTest.php`: every string passed to `Craft::t('supertext-translation', …)`, `|t('supertext-translation')` or listed in `TranslateAsset::MESSAGES` is in the German, French and Italian files (and nothing else is), with the same placeholders, tags and URLs; every `t()` in the edit-page JavaScript is in `TranslateAsset::MESSAGES`.
 - `tests/demo-check.sh` (CI): the demo image on PostgreSQL with the stand-in, started twice: demo accounts created once and never duplicated, no passwords in the log, the Editors group, `translate/check`, translation of the sample article into three sites (title, ASCII slug, rich text markup, nested Matrix entries), the skip on a second run, and the German front-end page.
 
 CI (`.github/workflows/ci.yml`) on every push and pull request: **test** (PHP 8.2, 8.3 and 8.4: lint and PHPUnit) and **demo** (builds `demo/Dockerfile`, runs `tests/demo-check.sh`).
@@ -177,7 +179,8 @@ Planned: submit the package to Packagist and the Craft Plugin Store.
 ## Conventions
 
 - PSR-12, PHP 8.2, strict types in new code; keep `src/api/` free of Craft classes.
-- User-visible strings through `Craft::t('supertext-translation', …)` with German in `src/translations/de/`; strings used by the JavaScript are listed in `TranslateAsset::MESSAGES`.
+- User-visible strings through `Craft::t('supertext-translation', …)` (or `|t('supertext-translation')` in Twig) with German, French and Italian in `src/translations/{de,fr,it}/supertext-translation.php`; new or changed strings need all three in the same commit. Strings used by the JavaScript are listed in `TranslateAsset::MESSAGES`. Formal address (Sie, vous, Lei) and Craft's own terms (*Eintrag/Website*, *entrée/site*, *articolo/sito*).
+- The API client (`src/api/`, no Craft classes) throws `SupertextException` with an English message and a `reason` (e.g. `limit_exceeded`); `helpers/Messages::of()` maps the reason to a translated string. A new reason needs a `match` arm there and its strings.
 - Keep the three docs in `docs/` current with every change (see `CLAUDE.md`).
 
 ## Known limitations / roadmap

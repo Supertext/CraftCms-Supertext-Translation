@@ -4,6 +4,8 @@ For editors who translate entries in the Craft control panel. Your administrator
 
 In Craft, every language is a **site**, and an entry has a version in each site. Supertext fills the other sites' versions with a translation of the site you're in.
 
+The Supertext box and its messages appear in your control panel language (English, German, French or Italian).
+
 ## Translate an entry
 
 1. Open the entry in the language you translate **from**, e.g. *English* (site menu at the top left).

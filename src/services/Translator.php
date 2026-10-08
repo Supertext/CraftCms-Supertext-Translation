@@ -22,6 +22,7 @@ use craft\models\Site;
 use supertext\crafttranslation\api\HtmlDocument;
 use supertext\crafttranslation\api\SupertextClient;
 use supertext\crafttranslation\api\SupertextException;
+use supertext\crafttranslation\helpers\Messages;
 use supertext\crafttranslation\Plugin;
 use supertext\crafttranslation\records\TranslationRecord;
 
@@ -137,7 +138,7 @@ class Translator extends Component
                 if (!$e instanceof SupertextException) {
                     Craft::error($e, __METHOD__);
                 }
-                $results[] = $result + ['status' => self::STATUS_ERROR, 'message' => $e->getMessage()];
+                $results[] = $result + ['status' => self::STATUS_ERROR, 'message' => Messages::of($e)];
             }
         }
 
@@ -154,7 +155,7 @@ class Translator extends Component
     {
         $settings = Plugin::getInstance()->getSettings();
         if ($settings->getApiKey() === '') {
-            throw new SupertextException(Craft::t('supertext-translation', 'No Supertext API key is configured. Set it in the plugin settings (usually as $SUPERTEXT_API_KEY). Generate a key at {url} (requires the Admin role in your Supertext account).', ['url' => 'https://www.supertext.com/en/integrations/api']));
+            throw new SupertextException(Messages::noApiKey());
         }
 
         return new SupertextClient(
