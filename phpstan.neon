@@ -1,0 +1,12 @@
+# PHPStan: static analysis of the plugin's own code (src/) against Craft CMS.
+# craftcms/phpstan (require-dev) teaches PHPStan about Craft and Yii.
+# See docs/DEVELOPER.md → Code quality and security checks.
+includes:
+    - vendor/craftcms/phpstan/phpstan.neon
+    - phpstan-baseline.neon
+
+parameters:
+    level: 5
+    paths:
+        - src
+    tmpDir: .phpstan-cache
