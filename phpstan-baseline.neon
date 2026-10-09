@@ -1,0 +1,13 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Cannot access property \$dateTranslated on array\<mixed\>\|yii\\db\\ActiveRecord\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: src/services/Translator.php
+
+		-
+			message: '#^Cannot access property \$targetSiteId on array\<mixed\>\|yii\\db\\ActiveRecord\.$#'
+			identifier: property.nonObject
+			count: 1
+			path: src/services/Translator.php

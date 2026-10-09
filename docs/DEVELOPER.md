@@ -98,7 +98,7 @@ vendor/bin/phpunit
 - `tests/unit/TranslationsTest.php`: every string passed to `Craft::t('supertext-translation', …)`, `|t('supertext-translation')` or listed in `TranslateAsset::MESSAGES` is in the German, French and Italian files (and nothing else is), with the same placeholders, tags and URLs; every `t()` in the edit-page JavaScript is in `TranslateAsset::MESSAGES`.
 - `tests/demo-check.sh` (CI): the demo image on PostgreSQL with the stand-in, started twice: demo accounts created once and never duplicated, no passwords in the log, the Editors group, `translate/check`, translation of the sample article into three sites (title, ASCII slug, rich text markup, nested Matrix entries), the skip on a second run, and the German front-end page.
 
-CI (`.github/workflows/ci.yml`) on every push and pull request: **test** (PHP 8.2, 8.3 and 8.4: lint and PHPUnit) and **demo** (builds `demo/Dockerfile`, runs `tests/demo-check.sh`).
+CI (`.github/workflows/ci.yml`) on every push and pull request: **test** (PHP 8.2, 8.3 and 8.4: lint and PHPUnit), **phpstan** (see *Code quality and security checks*) and **demo** (builds `demo/Dockerfile`, runs `tests/demo-check.sh`).
 
 ## Demo (Railway)
 
@@ -165,6 +165,15 @@ BASE_URL=http://127.0.0.1:8090 DEMO_ADMIN_EMAIL=… DEMO_ADMIN_PASSWORD=… \
 ```
 
 The script shows the live API address instead of the stand-in's on the settings page, and the public demo's address (`SITE_URL`) instead of the local one under *Sites*.
+
+## Code quality and security checks
+
+- **Checks** (`.github/workflows/checks.yml`): on every push and pull request, [actionlint](https://github.com/rhysd/actionlint) and [zizmor](https://docs.zizmor.sh) lint the workflows. On pull requests, dependency review fails a PR that adds a package with a known vulnerability (moderate or worse). Third-party actions are pinned to commit SHAs (Dependabot keeps them current); checkouts don't keep credentials, and workflows get `contents: read` unless a job needs more (the release job: `contents: write`).
+- **Links** (`.github/workflows/links.yml`): [lychee](https://lychee.cli.rs) checks the links in all Markdown files weekly and whenever docs change on `main`. Broken links open or update the issue "Broken links in the docs" (a docs push that breaks links also fails). Links that can't work from CI go in `.lycheeignore` (one regex per line).
+- **PHPStan** (job `phpstan` in `ci.yml`, config `phpstan.neon`): level 5 on the plugin's own code (`src/`), not the tests or `demo/`. [craftcms/phpstan](https://github.com/craftcms/phpstan) (a dev dependency) tells PHPStan about Craft and Yii. Locally: `composer install`, then `composer phpstan` (or `vendor/bin/phpstan analyse`). Existing findings that aren't simple to fix are listed in `phpstan-baseline.neon` (regenerate with `vendor/bin/phpstan analyse --generate-baseline` after fixing one). New code must not add findings.
+- **GitHub settings** (set by Remy's setup script, not in the repo): secret scanning with push protection (a push containing a known token format is rejected; findings under *Security → Secret scanning*) and CodeQL default setup (findings under *Security → Code scanning* and as PR comments). CodeQL doesn't cover PHP, which is why this repo runs PHPStan.
+
+Before starting work in this repo, look at its open findings: code scanning alerts, secret scanning alerts, Dependabot PRs and the "Broken links in the docs" issue.
 
 ## Releasing
 

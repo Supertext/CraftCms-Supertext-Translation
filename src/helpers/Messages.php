@@ -23,7 +23,7 @@ final class Messages
             return $e->getMessage();
         }
 
-        $params = array_values($e->args) + ['signupUrl' => self::SIGNUP_URL, 'url' => self::API_KEY_URL];
+        $params = $e->args + ['signupUrl' => self::SIGNUP_URL, 'url' => self::API_KEY_URL];
         $text = match ($e->reason) {
             'no_file_id' => Craft::t('supertext-translation', 'Supertext did not return a file id.'),
             'translation_failed' => Craft::t('supertext-translation', 'Supertext could not translate the document.'),

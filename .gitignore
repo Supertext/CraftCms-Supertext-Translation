@@ -8,3 +8,4 @@ node_modules/
 !/demo/project/storage/.gitkeep
 /demo/project/config/project/
 .env
+/.phpstan-cache/

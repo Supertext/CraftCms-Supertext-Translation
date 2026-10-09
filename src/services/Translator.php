@@ -127,7 +127,7 @@ class Translator extends Component
                 $translated = $this->translateUnits(
                     $client,
                     $units,
-                    $sourceSite?->language ?? '',
+                    $sourceSite->language ?? '',
                     $settings->targetCode($site->handle, $site->language),
                     $settings->politeness($site->handle),
                 );
