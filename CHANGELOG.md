@@ -6,7 +6,7 @@
 - French and Italian control panel texts, and German where it was missing: messages from Supertext (limit reached, authentication failed, timeouts and others) and the environment names in the settings now appear in the user's control panel language too. The "no API key" and "authentication failed" messages now also link to Supertext account sign-up.
 
 ### Fixed
-- Target languages without a region (e.g. a site in `de`) are now sent to Supertext as `de-DE` (`fr` → `fr-FR`, `en` → `en-US`, …); Supertext rejected them with "invalid language pair". Languages with a region and the *Supertext language* setting are used as before, and the source language is sent without region.
+- Target languages without a region (e.g. a site in `de`) are now sent to Supertext as `de-DE` (`fr` → `fr-FR`, `en` → `en-US`, …); Supertext rejected them with "invalid language pair". The same applies to a *Supertext language* set without a region; codes with a region are used as before (normalized, e.g. `de_ch` → `de-CH`), and the source language is sent without region.
 
 ## 0.1.0 — 2026-10-07
 
