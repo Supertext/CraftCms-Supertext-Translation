@@ -85,7 +85,7 @@ final class SupertextClient
     /**
      * Translates a complete HTML document and returns the translated HTML.
      *
-     * @param string $targetLanguage BCP-47 code, e.g. "de-CH"
+     * @param string $targetLanguage BCP-47 code, e.g. "de-CH"; a bare language gets its default region ("de" → "de-DE")
      * @param string $sourceLanguage any form ("en-GB"); only the primary subtag is sent. Empty: auto-detect.
      * @param string $politeness     "default", "more" (formal) or "less" (informal)
      */
@@ -114,11 +114,12 @@ final class SupertextClient
 
     private function submit(string $html, string $targetLanguage, string $sourceLanguage, string $politeness): string
     {
-        $fields = ['target_lang' => $targetLanguage];
-        $source = strtolower((string) strtok($sourceLanguage, '-_'));
+        // Target with a region ("de" → "de-DE"), source bare ("en-GB" → "en"): Supertext
+        // rejects bare targets and regional sources with INVALID_LANGUAGE_PAIR.
+        $fields = ['target_lang' => LanguageCodes::target($targetLanguage)];
+        $source = LanguageCodes::source($sourceLanguage);
 
         if ($source !== '') {
-            // A full tag such as "en-GB" as source is rejected with INVALID_LANGUAGE_PAIR.
             $fields['source_lang'] = $source;
         }
 

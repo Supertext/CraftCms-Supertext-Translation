@@ -62,7 +62,9 @@ The plugin translates into the **language of each site**. Set the languages in *
 
 In the plugin settings, the **Languages** table lists every site. Per site you can set:
 
-- **Supertext language**: a different Supertext code, if the site's language isn't one Supertext knows (e.g. `de-CH` for a site in `de`).
+- **Supertext language**: a different Supertext code, if the site's language isn't one Supertext knows or you want another region (e.g. `de-CH` for a site in `de`). Empty: the code comes from the site's language (shown as placeholder).
+
+How site languages become Supertext codes: Supertext needs the target language with a region. A site language with a region is used as it is (`de-CH`, `fr-CH`); a site language without one gets the usual region (`de` → `de-DE`, `fr` → `fr-FR`, `en` → `en-US`, `it` → `it-IT`, …). The source language is always sent without region (`en-US` → `en`). A *Supertext language* set for a site wins over its language.
 - **Form of address**: *Formal* (Sie, vous), *Informal* (du, tu) or *Default*.
 
 ![The Languages table: per site the language, an optional Supertext language code and the form of address](images/07-settings-languages.png)
@@ -90,7 +92,7 @@ All settings are in *Settings → Plugins → Supertext Translation* and stored 
 | API key | `$SUPERTEXT_API_KEY` | The key or an environment variable reference. Required. |
 | Supertext API | Live | *Live* (`https://api.supertext.com/v1/`), *Staging* or *Testing*. |
 | Custom API address | – | A different base URL (proxy, test server); may be an environment variable such as `$SUPERTEXT_API_URL`. Overrides *Supertext API*. |
-| Languages | – | Per site: Supertext language code (default: the site's language) and form of address. |
+| Languages | – | Per site: Supertext language code (default: the site's language, with the usual region if it has none, e.g. `de` → `de-DE`) and form of address. |
 | Timeout | 180 | Seconds to wait for the translation of one site. |
 
 Translated slugs follow Craft's own slug rules: set `limitAutoSlugsToAscii` in `config/general.php` to get `chocolat-suisse-expedie` instead of `chocolat-suisse-expédié`.

@@ -10,6 +10,7 @@ namespace supertext\crafttranslation\models;
 
 use craft\base\Model;
 use craft\helpers\App;
+use supertext\crafttranslation\api\LanguageCodes;
 use supertext\crafttranslation\api\SupertextClient;
 
 /**
@@ -58,12 +59,16 @@ class Settings extends Model
         return SupertextClient::baseUrlFor($this->environment, \is_string($custom) ? $custom : '');
     }
 
-    /** Supertext code for a site: the override, else the site's language (e.g. "de-CH"). */
+    /** Supertext target code for a site: the override, else the site's language with a region ("de" → "de-DE"). */
     public function targetCode(string $siteHandle, string $siteLanguage): string
     {
-        $code = trim((string) ($this->languages[$siteHandle]['code'] ?? ''));
+        return LanguageCodes::target($siteLanguage, (string) ($this->languages[$siteHandle]['code'] ?? ''));
+    }
 
-        return $code !== '' ? $code : $siteLanguage;
+    /** Supertext source code for a site: the bare language of the override or the site's language ("en-GB" → "en"). */
+    public function sourceCode(string $siteHandle, string $siteLanguage): string
+    {
+        return LanguageCodes::source($siteLanguage, (string) ($this->languages[$siteHandle]['code'] ?? ''));
     }
 
     public function politeness(string $siteHandle): string

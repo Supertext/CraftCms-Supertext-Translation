@@ -68,7 +68,7 @@
                     {{ forms.text({
                         name: 'languages[' ~ site.handle ~ '][code]',
                         value: config.code ?? '',
-                        placeholder: site.language,
+                        placeholder: settings.targetCode(site.handle, site.language),
                         size: 10,
                     }) }}
                 </td>
