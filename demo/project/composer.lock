@@ -4956,13 +4956,15 @@
             "dist": {
                 "type": "path",
                 "url": "../..",
-                "reference": "13ba7bed1ccd38c568ca56687b56389e6f8705be"
+                "reference": "f6957752f32841ce0eae0e8d8bcc493e07ec0728"
             },
             "require": {
                 "craftcms/cms": "^5.0",
                 "php": "^8.2"
             },
             "require-dev": {
+                "craftcms/phpstan": "dev-main",
+                "phpstan/phpstan": "^2.1",
                 "phpunit/phpunit": "^10.5"
             },
             "type": "craft-plugin",
@@ -4976,7 +4978,8 @@
             },
             "autoload": {
                 "psr-4": {
-                    "supertext\\crafttranslation\\": "src/"
+                    "supertext\\crafttranslation\\": "src/",
+                    "supertext\\crafttranslation\\sdk\\": "lib/supertext-sdk/src/"
                 }
             },
             "autoload-dev": {
@@ -4987,6 +4990,9 @@
             "scripts": {
                 "test": [
                     "phpunit --colors=always"
+                ],
+                "phpstan": [
+                    "phpstan analyse --memory-limit=1G"
                 ]
             },
             "license": [

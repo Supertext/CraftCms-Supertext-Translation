@@ -75,6 +75,7 @@ The protocol above, the retries, the language codes and the `data-st-id` documen
 
 - Never edit `lib/supertext-sdk/`. Fix the SDK in its repository, then run `scripts/vendor-sdk.sh [ref]` (default `main`; `SDK_DIR=/path/to/clone` uses a local clone) and the tests.
 - `src/api/SupertextClient.php` keeps the plugin's interface (`translateDocument`, `translateSegments`, `validateApiKey`, transport callable) and turns every SDK error code into a `SupertextException` reason (`REASONS`); `helpers/Messages::of()` translates it. A new SDK error code needs a reason there, a `match` arm in `Messages` and its strings in `de`, `fr` and `it`.
+- The demo installs the plugin from `demo/project/composer.lock`, which records the plugin's autoload paths: after changing `autoload` in `composer.json`, run `composer update supertext/craft-supertext-translation --no-install` in `demo/project` and commit the lock (otherwise the demo can't load the SDK classes).
 - PHPStan analyses `src/` only; the SDK has its own checks in its repository.
 - Segments missing from Supertext's answer are left untouched in the target site (the SDK's `translateTexts()` would fail the whole entry instead).
 - The live API answers an unknown language (`xx-YY`) with HTTP 404 `INVALID_LANGUAGE_PAIR`; the SDK reports it as `invalid_language_pair` with both codes, shown to editors as "Supertext does not support this language pair (en → xx-YY)".
