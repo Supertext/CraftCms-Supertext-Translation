@@ -5,6 +5,10 @@
 ### Added
 - French and Italian control panel texts, and German where it was missing: messages from Supertext (limit reached, authentication failed, timeouts and others) and the environment names in the settings now appear in the user's control panel language too. The "no API key" and "authentication failed" messages now also link to Supertext account sign-up.
 
+### Changed
+- All Supertext API calls now go through the official Supertext PHP SDK, bundled with the plugin (nothing extra to install). Behaviour stays the same.
+- An unsupported language pair now has its own message, naming the codes ("Supertext does not support this language pair (en → xx-YY)"), in English, German, French and Italian.
+
 ### Fixed
 - Target languages without a region (e.g. a site in `de`) are now sent to Supertext as `de-DE` (`fr` → `fr-FR`, `en` → `en-US`, …); Supertext rejected them with "invalid language pair". The same applies to a *Supertext language* set without a region; codes with a region are used as before (normalized, e.g. `de_ch` → `de-CH`), and the source language is sent without region.
 

@@ -19,7 +19,6 @@ use craft\fields\PlainText;
 use craft\helpers\Db;
 use craft\helpers\ElementHelper;
 use craft\models\Site;
-use supertext\crafttranslation\api\HtmlDocument;
 use supertext\crafttranslation\api\SupertextClient;
 use supertext\crafttranslation\api\SupertextException;
 use supertext\crafttranslation\helpers\Messages;
@@ -266,36 +265,7 @@ class Translator extends Component
             ];
         }
 
-        $result = [];
-        foreach (self::chunks($segments) as $chunk) {
-            $html = $client->translateDocument(HtmlDocument::build($chunk), $targetLanguage, $sourceLanguage, $politeness);
-            $result += HtmlDocument::parse($html, array_map(static fn(array $s) => $s['html'], $chunk));
-        }
-
-        return $result;
-    }
-
-    /**
-     * Splits the segments into documents below the API's size limit (keys are kept).
-     *
-     * @param array<int, array{text: string, html: bool}> $segments
-     * @return list<array<int, array{text: string, html: bool}>>
-     */
-    public static function chunks(array $segments, int $limit = SupertextClient::MAX_DOCUMENT_CHARACTERS): array
-    {
-        $chunks = [[]];
-        $size = 0;
-        foreach ($segments as $id => $segment) {
-            $length = mb_strlen($segment['text']);
-            if ($chunks[array_key_last($chunks)] !== [] && $size + $length > $limit) {
-                $chunks[] = [];
-                $size = 0;
-            }
-            $chunks[array_key_last($chunks)][$id] = $segment;
-            $size += $length;
-        }
-
-        return $chunks;
+        return $client->translateSegments($segments, $targetLanguage, $sourceLanguage, $politeness);
     }
 
     /**

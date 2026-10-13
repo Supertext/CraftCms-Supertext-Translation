@@ -34,6 +34,7 @@ final class Messages
             'no_api_key' => self::noApiKey(),
             'unreachable' => Craft::t('supertext-translation', 'Could not reach Supertext: {0}', $params),
             'auth_failed' => Craft::t('supertext-translation', 'Authentication failed. Please check the Supertext API key. No Supertext account yet? Create one at {signupUrl}. Generate your API key at {url} (requires the Admin role).', $params),
+            'invalid_language_pair' => Craft::t('supertext-translation', 'Supertext does not support this language pair ({0} → {1}). Check the language codes in the plugin settings.', $params),
             'not_found' => Craft::t('supertext-translation', 'The requested Supertext resource was not found.'),
             'too_large' => Craft::t('supertext-translation', 'The content is too large for Supertext to translate in one go.'),
             'rate_limited' => Craft::t('supertext-translation', 'Too many requests to Supertext. Please try again shortly.'),

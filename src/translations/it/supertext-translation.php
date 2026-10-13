@@ -28,6 +28,7 @@ return [
     'The translated document was empty.' => 'Il documento tradotto era vuoto.',
     'Could not reach Supertext: {0}' => 'Impossibile raggiungere Supertext: {0}',
     'Authentication failed. Please check the Supertext API key. No Supertext account yet? Create one at {signupUrl}. Generate your API key at {url} (requires the Admin role).' => 'Autenticazione non riuscita. Verifichi la chiave API Supertext. Non ha ancora un account Supertext? Ne crei uno su {signupUrl}. Generi la Sua chiave API su {url} (richiede il ruolo Admin).',
+    'Supertext does not support this language pair ({0} → {1}). Check the language codes in the plugin settings.' => 'Supertext non supporta questa coppia di lingue ({0} → {1}). Verifichi i codici lingua nelle impostazioni del plugin.',
     'The requested Supertext resource was not found.' => 'La risorsa Supertext richiesta non è stata trovata.',
     'The content is too large for Supertext to translate in one go.' => 'Il contenuto è troppo grande per essere tradotto da Supertext in un\'unica volta.',
     'Too many requests to Supertext. Please try again shortly.' => 'Troppe richieste a Supertext. Riprovi tra poco.',

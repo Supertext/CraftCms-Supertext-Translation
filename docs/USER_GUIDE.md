@@ -74,6 +74,7 @@ Empty fields are skipped. Entries nested inside CKEditor fields are not translat
 | *The entry is not available in this site.* | The entry isn't enabled in that site. |
 | *Authentication failed. Please check the Supertext API key.* | The API key is wrong. Ask your administrator. |
 | *Your Supertext translation limit is exceeded.* | Your organisation's Supertext limit is used up. |
+| *Supertext does not support this language pair (en → …).* | Supertext can't translate into this site's language, or its language code is wrong. Tell your administrator. |
 | *Too many requests to Supertext. Please try again shortly.* | Supertext was busy; try again in a moment. |
 | *Timed out waiting for the Supertext translation.* / *The Supertext service is currently unavailable.* | Supertext took too long or is unavailable. Try again later. |
 | *The translation could not be saved: …* | Craft refused to save the translated version (e.g. a required field is empty in that site). The reason follows. |

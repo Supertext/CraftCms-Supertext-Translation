@@ -16,6 +16,7 @@ COPY --from=public.ecr.aws/docker/library/composer:2 /usr/bin/composer /usr/bin/
 WORKDIR /app
 COPY composer.json LICENSE README.md CHANGELOG.md /app/
 COPY src /app/src
+COPY lib /app/lib
 COPY demo /app/demo
 WORKDIR /app/demo/project
 RUN COMPOSER_ALLOW_SUPERUSER=1 composer install --no-dev --no-interaction --no-progress --prefer-dist \

@@ -20,7 +20,10 @@
     "phpunit/phpunit": "^10.5"
   },
   "autoload": {
-    "psr-4": { "supertext\\crafttranslation\\": "src/" }
+    "psr-4": {
+      "supertext\\crafttranslation\\": "src/",
+      "supertext\\crafttranslation\\sdk\\": "lib/supertext-sdk/src/"
+    }
   },
   "autoload-dev": {
     "psr-4": { "supertext\\crafttranslation\\tests\\": "tests/" }

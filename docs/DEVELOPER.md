@@ -16,9 +16,10 @@ controllers/TranslateController ── requires the plugin permission, the edito
 services/Translator::translate()
    │ collectUnits(): title, slug, Plain Text / CKEditor / Redactor fields, nested Matrix entries (recursive)
    │ per target site: skip if it has its own text (unless overwrite), check canSave()
-   │ api/HtmlDocument::build(): one <div data-st-id="N"> per value; chunks below 900k characters
    ▼
-api/SupertextClient   POST file → poll status → GET translation → DELETE   (Guzzle via Craft::createGuzzleClient)
+api/SupertextClient::translateSegments()   the bundled Supertext SDK: one <div data-st-id="N"> per value,
+   │   documents below 900k characters, POST file → poll status → GET translation → DELETE
+   │   (HTTP through Craft::createGuzzleClient via api/CallableTransport)
    ▼
 apply(): set the values on the entry (and nested entries) in the target site, save nested entries,
          then the entry (revision "Translated with Supertext from …"); remember() in supertext_translations
@@ -27,7 +28,8 @@ apply(): set the values on the entry (and nested entries) in the target site, sa
 | Path | Responsibility |
 | --- | --- |
 | `src/Plugin.php` | Registers the permission `supertext-translation:translate`, the entry index action, the sidebar box (`Element::EVENT_DEFINE_SIDEBAR_HTML`), settings page, console controllers |
-| `src/api/` | Supertext API client, HTML document, exception. No Craft dependencies (HTTP through a transport callable), unit-tested on their own |
+| `src/api/` | Wrapper around the Supertext SDK (`SupertextClient`, `CallableTransport`), language codes, exception. No Craft dependencies (HTTP through a transport callable), unit-tested on their own |
+| `lib/supertext-sdk/` | Bundled copy of the Supertext PHP SDK, namespace `supertext\crafttranslation\sdk` (see *Supertext SDK*) |
 | `src/services/Translator.php` | Field rules, "already translated" check, translation, saving |
 | `src/controllers/TranslateController.php` | Control panel actions `info`, `entry`, `test-connection` (admins) |
 | `src/elements/actions/TranslateWithSupertext.php`, `src/jobs/TranslateEntryJob.php` | Bulk translation in the queue (missing sites only) |
@@ -67,11 +69,21 @@ Auth header: `Authorization: Supertext-Auth-Key <key>`. The header name must be 
 
 **Rate limit:** the API limits requests per second per key (HTTP 429). The client retries a 429 up to 4 times, waiting for `Retry-After` if sent, otherwise 1, 2, 4 and 8 seconds plus jitter. Target sites are translated one after the other.
 
+## Supertext SDK
+
+The protocol above, the retries, the language codes and the `data-st-id` document come from the official Supertext PHP SDK ([Supertext/Supertext-API-SDK-and-Guide](https://github.com/Supertext/Supertext-API-SDK-and-Guide)). The plugin ships a copy in `lib/supertext-sdk/` with its namespace changed from `Supertext\Sdk` to `supertext\crafttranslation\sdk` (Composer autoloads it from the plugin's `composer.json`), so sites install nothing extra and another package that requires the SDK itself can't clash with it. `lib/supertext-sdk/COMMIT` names the SDK revision.
+
+- Never edit `lib/supertext-sdk/`. Fix the SDK in its repository, then run `scripts/vendor-sdk.sh [ref]` (default `main`; `SDK_DIR=/path/to/clone` uses a local clone) and the tests.
+- `src/api/SupertextClient.php` keeps the plugin's interface (`translateDocument`, `translateSegments`, `validateApiKey`, transport callable) and turns every SDK error code into a `SupertextException` reason (`REASONS`); `helpers/Messages::of()` translates it. A new SDK error code needs a reason there, a `match` arm in `Messages` and its strings in `de`, `fr` and `it`.
+- PHPStan analyses `src/` only; the SDK has its own checks in its repository.
+- Segments missing from Supertext's answer are left untouched in the target site (the SDK's `translateTexts()` would fail the whole entry instead).
+- The live API answers an unknown language (`xx-YY`) with HTTP 404 `INVALID_LANGUAGE_PAIR`; the SDK reports it as `invalid_language_pair` with both codes, shown to editors as "Supertext does not support this language pair (en → xx-YY)".
+
 ## Language codes
 
 Supertext wants the **source as a bare language** (`en`, `de`, `fr`) and the **target as a regional code** (`de-DE`, `fr-CH`, `en-US`). A bare target such as `de`, or a regional source such as `en-US`, is rejected with `INVALID_LANGUAGE_PAIR`. Translating within one language (`en` → `en-GB`) is allowed.
 
-`src/api/LanguageCodes.php` (no Craft dependency, `tests/unit/LanguageCodesTest.php`) turns the site's language into the codes sent:
+`src/api/LanguageCodes.php` (the SDK's `LanguageCodes` plus the per-site override; no Craft dependency, `tests/unit/LanguageCodesTest.php`) turns the site's language into the codes sent:
 
 - **Source:** the bare language of the source site's *Supertext language* override, else of the site's language (`en-US` → `en`).
 - **Target:** the target site's *Supertext language* override if set (normalized: `de_ch` → `de-CH`), else the site's language. Either way, a code with a region keeps it (`de_CH`/`de-ch` → `de-CH`; scripts and numeric regions such as `zh-Hant`, `es-419` keep their form); a bare language gets its default region: ar→ar-SA, bg→bg-BG, cs→cs-CZ, da→da-DK, de→de-DE, el→el-GR, en→en-US, es→es-ES, et→et-EE, fi→fi-FI, fr→fr-FR, hr→hr-HR, hu→hu-HU, it→it-IT, ja→ja-JP, ko→ko-KR, lt→lt-LT, lv→lv-LV, nb→nb-NO, nl→nl-NL, pl→pl-PL, pt→pt-PT, ro→ro-RO, ru→ru-RU, sk→sk-SK, sl→sl-SI, sr→sr-RS, sv→sv-SE, th→th-TH, tr→tr-TR, uk→uk-UA, vi→vi-VN, zh→zh-CN (same table as the other Supertext plugins). Unknown bare codes are sent unchanged, so Supertext's error names them.
@@ -103,9 +115,7 @@ composer install
 vendor/bin/phpunit
 ```
 
-- `tests/unit/SupertextClientTest.php`: the API protocol, auth header and prefix, 429 retries, errors, clean-up.
-- `tests/unit/HtmlDocumentTest.php`: document packing and parsing, whitespace.
-- `tests/unit/ChunksTest.php`: splitting documents below the size limit.
+- `tests/unit/SupertextClientTest.php`: the SDK wrapper: protocol, auth header and prefix, 429 retries, error reasons (language pair included), clean-up, segments (plain text, HTML, blank, missing) and splitting into several documents.
 - `tests/unit/TranslationsTest.php`: every string passed to `Craft::t('supertext-translation', …)`, `|t('supertext-translation')` or listed in `TranslateAsset::MESSAGES` is in the German, French and Italian files (and nothing else is), with the same placeholders, tags and URLs; every `t()` in the edit-page JavaScript is in `TranslateAsset::MESSAGES`.
 - `tests/demo-check.sh` (CI): the demo image on PostgreSQL with the stand-in, started twice: demo accounts created once and never duplicated, no passwords in the log, the Editors group, `translate/check`, translation of the sample article into three sites (title, ASCII slug, rich text markup, nested Matrix entries), the skip on a second run, and the German front-end page.
 
@@ -200,7 +210,7 @@ Planned: submit the package to Packagist and the Craft Plugin Store.
 
 - PSR-12, PHP 8.2, strict types in new code; keep `src/api/` free of Craft classes.
 - User-visible strings through `Craft::t('supertext-translation', …)` (or `|t('supertext-translation')` in Twig) with German, French and Italian in `src/translations/{de,fr,it}/supertext-translation.php`; new or changed strings need all three in the same commit. Strings used by the JavaScript are listed in `TranslateAsset::MESSAGES`. Formal address (Sie, vous, Lei) and Craft's own terms (*Eintrag/Website*, *entrée/site*, *articolo/sito*).
-- The API client (`src/api/`, no Craft classes) throws `SupertextException` with an English message and a `reason` (e.g. `limit_exceeded`); `helpers/Messages::of()` maps the reason to a translated string. A new reason needs a `match` arm there and its strings.
+- The API client (`src/api/`, no Craft classes, built on the bundled SDK) throws `SupertextException` with an English message and a `reason` (e.g. `limit_exceeded`); `helpers/Messages::of()` maps the reason to a translated string. A new reason needs a `match` arm there and its strings.
 - Keep the three docs in `docs/` current with every change (see `CLAUDE.md`).
 
 ## Known limitations / roadmap

@@ -114,6 +114,7 @@ The entry index action *Translate with Supertext* translates in Craft's queue. C
 | *Authentication failed. Please check the Supertext API key.* | Wrong or revoked key, or a key for another environment (*Live* vs *Staging*). Use *Test connection*. |
 | *You are not allowed to edit the entry in this site.* | The editor lacks *Edit* permission for that site or the section's save permissions. |
 | *The entry is not available in this site.* | The section doesn't propagate the entry to that site. Enable the site in the entry's *Status* panel or change the section's propagation. |
+| *Supertext does not support this language pair (en → xx-YY)* | The site's language (or its *Supertext language* in the plugin settings) isn't one Supertext offers. Set the *Supertext language* to a code such as `de-CH` or `fr`; the message shows the codes that were sent. |
 | *Too many requests to Supertext* | The API's per-second limit was hit repeatedly although the plugin retries. Try again shortly. |
 | *Your Supertext translation limit is exceeded.* | The Supertext subscription's quota is used up. |
 | *Timed out waiting for the Supertext translation* | Very long content. Raise *Timeout* (and PHP's `max_execution_time`). |

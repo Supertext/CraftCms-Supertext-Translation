@@ -87,6 +87,7 @@ Lessons from the live API, apply them here: header `Authorization: Supertext-Aut
 - New settings go in `src/models/Settings.php`, `src/templates/_settings.twig`, the German, French and Italian strings in `src/translations/{de,fr,it}/` **and** the settings table in `docs/INSTALLATION.md`.
 - Field rules live in `src/services/Translator.php` (`collectUnits`, `kindOf`); keep "Field rules" in `docs/DEVELOPER.md` and "What is translated" in `docs/USER_GUIDE.md` in sync.
 - Keep `src/api/` free of Craft classes (unit tests run without Craft).
+- All Supertext API calls go through the Supertext PHP SDK, shipped in `lib/supertext-sdk` with its namespace changed to `supertext\crafttranslation\sdk` and wrapped by `src/api/SupertextClient.php`. Never edit `lib/supertext-sdk`: fix the SDK in `Supertext/Supertext-API-SDK-and-Guide` and run `scripts/vendor-sdk.sh`. Every SDK error code needs a reason in `SupertextClient::REASONS`, a `Messages::of()` arm and strings in `de`, `fr` and `it`.
 - Strings used by the edit-page JavaScript must be listed in `TranslateAsset::MESSAGES`.
 - The plugin handle `supertext-translation` and the permission `supertext-translation:translate` are stored in users' projects; renaming them is a breaking change.
 - `demo/` is the Railway demo (`railway.json` → `demo/Dockerfile`, context = repo root). Demo-only setup lives in `demo/project/modules/supertextdemo`; it only creates what's missing, so changes to the demo's data model need a fresh database or an explicit step there. Demo secrets live only in Railway variables.
