@@ -10,6 +10,7 @@
 - An unsupported language pair now has its own message, naming the codes ("Supertext does not support this language pair (en → xx-YY)"), in English, German, French and Italian.
 
 ### Fixed
+- Language codes with a variant or extension, e.g. a *Supertext language* `de-DE-1996` or `en-US-x-twain`, are now sent to Supertext as `de-DE` / `en-US` (Supertext rejected them).
 - Target languages without a region (e.g. a site in `de`) are now sent to Supertext as `de-DE` (`fr` → `fr-FR`, `en` → `en-US`, …); Supertext rejected them with "invalid language pair". The same applies to a *Supertext language* set without a region; codes with a region are used as before (normalized, e.g. `de_ch` → `de-CH`), and the source language is sent without region.
 
 ## 0.1.0 — 2026-10-07
