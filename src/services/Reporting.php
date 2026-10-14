@@ -77,7 +77,7 @@ class Reporting extends Component
     {
         $result = $this->reporting()->testConnection($this->apiKey());
 
-        return $result?->check ?? self::failedCheck();
+        return $result->check ?? self::failedCheck();
     }
 
     /**
@@ -92,7 +92,7 @@ class Reporting extends Component
         if ($result !== null && $result->event === null && $this->enabled()) {
             $result = $reporting->reportCheck() ?? $result;
         }
-        $check = $result?->check ?? self::failedCheck();
+        $check = $result->check ?? self::failedCheck();
 
         return ['check' => $check, 'event' => $result?->event, 'sent' => (bool) $result?->sent];
     }

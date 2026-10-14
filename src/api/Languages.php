@@ -36,7 +36,7 @@ final class Languages
      */
     public static function targets(): array
     {
-        return array_values(SdkLanguages::TARGETS);
+        return SdkLanguages::TARGETS;
     }
 
     /** The Supertext target that equals the site language apart from case and "_"/"-", else null ("de" → null). */
