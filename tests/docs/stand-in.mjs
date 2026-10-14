@@ -3,8 +3,13 @@
  * Docs screenshots and CI only: answers like the Supertext AI file translation API v1 and
  * returns German, French and Italian for the demo's sample article (samples.json: real
  * Supertext output, keyed by target language's primary subtag).
- * Unknown text comes back as "[<target>] text". Like the real API, it rejects bare targets ("de")
- * and regional sources ("en-US") with INVALID_LANGUAGE_PAIR. Listens on :8765 (any API key).
+ * Unknown text comes back as "[<target>] text". Like the real API, it accepts exactly Supertext's
+ * language list (targets "de-CH", "es", "zh-Hans", …; bare sources) and answers anything else with
+ * HTTP 404 INVALID_LANGUAGE_PAIR. Listens on :8765 (any API key).
+ *
+ * It stands in for the Supertext Commando Center too (SUPERTEXT_REPORT_URL=http://127.0.0.1:8765/report),
+ * so screenshots and CI never report to the live center: POST /report answers 202 and keeps the
+ * report; GET /reports lists them (for tests/demo-check.sh).
  */
 import http from 'node:http'
 import { randomBytes } from 'node:crypto'
@@ -20,6 +25,10 @@ const samples = Object.fromEntries(
   ]),
 )
 const files = new Map()
+const reports = []
+// Supertext's language list (GET features, October 2026; the SDK's Languages).
+const TARGETS = new Set('bg cs da de-AT de-CH de-DE el en-GB en-US es fi fr-CH fr-FR gsw-u-sd-chbe gsw-u-sd-chzh hr hu it-CH it-IT ja ko nb nl pl pt-BR pt-PT rm ru sk sl sq sr-Cyrl sr-Latn sv tr zh-Hans zh-Hant'.split(' '))
+const SOURCES = new Set('bg cs da de el en es fi fr gsw hr hu it ja ko nb nl pl pt rm ru sk sl sq sr sv tr zh'.split(' '))
 
 http
   .createServer(async (req, res) => {
@@ -28,6 +37,13 @@ http
       res.writeHead(status, { 'Content-Type': type })
       res.end(type === 'application/json' ? JSON.stringify(body) : body)
     }
+    if (req.method === 'POST' && path === '/report') {
+      const chunks = []
+      for await (const chunk of req) chunks.push(chunk)
+      try { reports.push(JSON.parse(Buffer.concat(chunks).toString('utf8'))) } catch { return send(400, { ok: false, error: 'not JSON' }) }
+      return send(202, { ok: true })
+    }
+    if (req.method === 'GET' && path === '/reports') return send(200, reports)
     if (!/^Supertext-Auth-Key \S+$/.test(req.headers.authorization || '')) return send(401, { detail: 'missing key' })
     if (path === '/features') return send(200, {})
     if (req.method === 'POST') {
@@ -36,11 +52,11 @@ http
       const form = await new Request('http://x', { method: 'POST', headers: req.headers, body: Buffer.concat(chunks) }).formData()
       const file = form.get('file')
       if (!file || file.type !== 'text/html') return send(415, { detail: 'FILETYPE_NOT_ALLOWED' })
-      // Like the real API: bare targets ("de") and regional sources ("en-US") are rejected.
+      // Like the real API: only its own codes ("de" or "es-ES" as a target, "en-US" as a source are rejected).
       const target = String(form.get('target_lang') ?? '')
       const source = form.get('source_lang')
-      if (!/^[a-z]{2,3}-([A-Z]{2}|[A-Z][a-z]{3}|\d{3})$/.test(target) || (source !== null && !/^[a-z]{2,3}$/.test(String(source)))) {
-        return send(400, { detail: 'INVALID_LANGUAGE_PAIR' })
+      if (!TARGETS.has(target) || (source !== null && !SOURCES.has(String(source)))) {
+        return send(404, { error_code: 'INVALID_LANGUAGE_PAIR', source_lang: source, target_lang: target })
       }
       const id = randomBytes(6).toString('hex')
       files.set(id, { html: await file.text(), target })

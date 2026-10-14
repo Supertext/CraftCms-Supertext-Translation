@@ -8,32 +8,33 @@
 
 namespace supertext\crafttranslation\api;
 
-use supertext\crafttranslation\sdk\Client;
-use supertext\crafttranslation\sdk\HtmlDocument;
-use supertext\crafttranslation\sdk\Segment;
-use supertext\crafttranslation\sdk\Supertext;
-use supertext\crafttranslation\sdk\SupertextException as SdkException;
+use supertext\crafttranslation\sdk\V1\ApiKeyCheck;
+use supertext\crafttranslation\sdk\V1\Client;
+use supertext\crafttranslation\sdk\V1\HtmlDocument;
+use supertext\crafttranslation\sdk\V1\Protocol;
+use supertext\crafttranslation\sdk\V1\Segment;
+use supertext\crafttranslation\sdk\V1\SupertextException as SdkException;
 
 /**
  * Supertext AI file translation API v1 (https://api.supertext.com/v1/), through the
- * Supertext PHP SDK bundled in lib/supertext-sdk (namespace supertext\crafttranslation\sdk).
+ * Supertext PHP SDK bundled in lib/supertext-sdk (namespace supertext\crafttranslation\sdk\V1).
  *
  * The SDK does the protocol (upload one HTML document, poll its status, download the
- * translation, delete the file), the auth header, HTTP 429 retries, language codes and
- * the data-st-id document. This class keeps the plugin's interface: HTTP goes through a
- * transport callable (Craft's Guzzle client, or a fake in tests), and SDK errors come out
- * as this plugin's SupertextException with a reason the control panel translates.
+ * translation, delete the file), the auth header, HTTP 429 retries and the data-st-id
+ * document. Language codes are sent as given: resolve them with Languages first. This
+ * class keeps the plugin's interface: HTTP goes through a transport callable (Craft's
+ * Guzzle client, or a fake in tests), and SDK errors come out as this plugin's SupertextException with a reason the control panel translates.
  *
  * Has no Craft dependencies.
  */
 final class SupertextClient
 {
-    public const LIVE = Supertext::LIVE_BASE_URL;
+    public const LIVE = Protocol::LIVE_BASE_URL;
     public const STAGING = 'https://api.staging.supertext.com/v1/';
     public const TESTING = 'https://api.testing.supertext.com/v1/';
 
     /** Stay well below the API's 1,000,000 character limit per document. */
-    public const MAX_DOCUMENT_CHARACTERS = Supertext::DEFAULT_MAX_CHARACTERS;
+    public const MAX_DOCUMENT_CHARACTERS = Protocol::DEFAULT_MAX_CHARACTERS;
 
     /** SDK error code → [plugin reason, English message]. Messages::of() translates the reason. */
     private const REASONS = [
@@ -52,6 +53,8 @@ final class SupertextClient
         SdkException::FILE_DELETED => ['deleted', 'The document was deleted at Supertext before it could be downloaded.'],
         SdkException::TIMEOUT => ['timeout', 'Timed out waiting for the Supertext translation.'],
         SdkException::INCOMPLETE_RESPONSE => ['empty', 'The translated document was empty.'],
+        SdkException::UNSUPPORTED_LANGUAGE => ['unsupported_language', 'The language %s has no Supertext language yet. Ask your administrator to choose its Supertext language in the plugin settings (Languages).'],
+        SdkException::UNSUPPORTED_FEATURE => ['unsupported_feature', 'Supertext offers no formal or informal tone for this language. Set its form of address to Default in the plugin settings (Languages).'],
     ];
 
     private readonly Client $sdk;
@@ -120,8 +123,8 @@ final class SupertextClient
     /**
      * Translates a complete HTML document and returns the translated HTML.
      *
-     * @param string $targetLanguage BCP-47 code, e.g. "de-CH"; a bare language gets its default region ("de" → "de-DE")
-     * @param string $sourceLanguage any form ("en-GB"); only the primary subtag is sent. Empty: auto-detect.
+     * @param string $targetLanguage a Supertext target code (Languages::target()), e.g. "de-CH" or "es"
+     * @param string $sourceLanguage a Supertext source code (Languages::source()), e.g. "en". Empty: auto-detect.
      * @param string $politeness     "default", "more" (formal) or "less" (informal)
      */
     public function translateDocument(string $html, string $targetLanguage, string $sourceLanguage = '', string $politeness = 'default'): string
@@ -171,10 +174,16 @@ final class SupertextClient
         $this->call(fn () => $this->sdk->validateApiKey());
     }
 
+    /** The automatic key check as a result (ok, invalid, missing, unreachable, error). Never throws. */
+    public function checkApiKey(): ApiKeyCheck
+    {
+        return $this->sdk->checkApiKey();
+    }
+
     /** Seconds to wait before retry $attempt (0-based): Retry-After if sent, else 1, 2, 4, 8 plus jitter. */
     public static function retryDelay(int $attempt, string $retryAfter = ''): float
     {
-        return Supertext::retryDelayMs($attempt, $retryAfter !== '' ? $retryAfter : null) / 1000;
+        return Protocol::retryDelayMs($attempt, $retryAfter !== '' ? $retryAfter : null) / 1000;
     }
 
     /**
@@ -191,7 +200,8 @@ final class SupertextClient
         }
     }
 
-    private static function fromSdk(SdkException $e): SupertextException
+    /** An SDK error as this plugin's exception, with the reason Messages::of() translates. */
+    public static function fromSdk(SdkException $e): SupertextException
     {
         [$reason, $message] = self::REASONS[$e->errorCode] ?? ['', $e->getMessage()];
         $detail = (string) $e->detail;
@@ -199,6 +209,7 @@ final class SupertextClient
             SdkException::UNEXPECTED_STATUS => [(int) $e->status],
             SdkException::INVALID_LANGUAGE_PAIR => [(string) $e->sourceLang ?: '?', (string) $e->targetLang ?: '?'],
             SdkException::TRANSPORT_ERROR => [$detail],
+            SdkException::UNSUPPORTED_LANGUAGE => [(string) ($e->targetLang ?? $e->sourceLang ?? '?')],
             default => [],
         };
         if ($e->errorCode === SdkException::TRANSPORT_ERROR) {

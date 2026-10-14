@@ -13,6 +13,7 @@ use craft\web\Controller;
 use supertext\crafttranslation\api\SupertextException;
 use supertext\crafttranslation\helpers\Messages;
 use supertext\crafttranslation\Plugin;
+use supertext\crafttranslation\sdk\V1\ApiKeyCheck;
 use yii\web\Response;
 
 /**
@@ -20,7 +21,7 @@ use yii\web\Response;
  *
  *   GET  actions/supertext-translation/translate/info?entryId=&siteId=   sites of the entry
  *   POST actions/supertext-translation/translate/entry                    { entryId, sourceSiteId, targetSiteIds[], overwrite }
- *   POST actions/supertext-translation/translate/test-connection          admins
+ *   POST actions/supertext-translation/translate/test-connection          admins: the API key check
  */
 class TranslateController extends Controller
 {
@@ -49,6 +50,8 @@ class TranslateController extends Controller
         if (!$entry) {
             return $this->asFailure(Craft::t('supertext-translation', 'The entry was not found.'));
         }
+
+        Plugin::getInstance()->getReporting()->onRequest();
 
         return $this->asJson($translator->describe($entry, Craft::$app->getUser()->getIdentity()) + [
             'configured' => Plugin::getInstance()->getSettings()->getApiKey() !== '',
@@ -79,15 +82,17 @@ class TranslateController extends Controller
         return $this->asJson(['results' => $results]);
     }
 
+    /** The automatic API key check (cost-free `GET features`): { ok, status, message (HTML), checkedAt }. */
     public function actionTestConnection(): Response
     {
         $this->requirePostRequest();
-        try {
-            Plugin::getInstance()->getTranslator()->testConnection();
-        } catch (SupertextException $e) {
-            return $this->asFailure(Messages::of($e));
-        }
+        $check = Plugin::getInstance()->getReporting()->testConnection();
 
-        return $this->asSuccess(Craft::t('supertext-translation', 'Connected. The API key works.'));
+        return $this->asJson([
+            'ok' => $check->status === ApiKeyCheck::OK,
+            'status' => $check->status,
+            'message' => Messages::keyCheck($check),
+            'checkedAt' => $check->checkedAt,
+        ]);
     }
 }

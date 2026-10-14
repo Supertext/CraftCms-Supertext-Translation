@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace supertext\crafttranslation\sdk;
+namespace supertext\crafttranslation\sdk\V1;
 
 /**
  * Form of address in the translation, for languages that have one.

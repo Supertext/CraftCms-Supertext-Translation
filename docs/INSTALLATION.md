@@ -20,7 +20,7 @@ composer require supertext/craft-supertext-translation:dev-main
 php craft plugin/install supertext-translation
 ```
 
-Or install it in *Settings → Plugins* after the `composer require`. Installing creates one database table (`supertext_translations`, which remembers when an entry was last translated into a site).
+Or install it in *Settings → Plugins* after the `composer require`. Installing creates two small database tables: `supertext_translations` (when an entry was last translated into a site) and `supertext_state` (the latest API key check and what was last sent as version information, see [Version information and the API key check](#version-information-and-the-api-key-check)).
 
 ### Update
 
@@ -28,6 +28,8 @@ Or install it in *Settings → Plugins* after the `composer require`. Installing
 composer update supertext/craft-supertext-translation
 php craft up
 ```
+
+`php craft up` runs the plugin's migrations (e.g. the `supertext_state` table added with the API key check).
 
 ### Uninstall
 
@@ -50,9 +52,9 @@ The **API key** field in the plugin settings links to both pages.
 
    You can paste it with or without the `Supertext-Auth-Key ` prefix that Supertext shows. The plugin sends it as `Authorization: Supertext-Auth-Key <key>`.
 2. *Settings → Plugins → Supertext Translation*: the **API key** field already contains `$SUPERTEXT_API_KEY`. Keep the variable reference there: the setting is stored in the project config, and with the reference the key itself never ends up in your repository.
-3. Click **Test connection**. It calls a cost-free endpoint of the Supertext API and shows *Connected. The API key works.* or the reason it doesn't.
+3. Save the settings. The plugin then checks the key automatically (a cost-free call to the Supertext API; nothing is translated or billed) and shows the result: *API key checked: the connection to Supertext works.*, *Supertext rejected the API key* (with the links to create an account and generate a key), *No API key is set yet*, or that Supertext couldn't be reached. An invalid key never blocks saving. The **API key check** on the settings page shows the latest result with its time; **Test connection** checks again.
 
-![The plugin settings: API key as $SUPERTEXT_API_KEY, Supertext API "Live", custom API address, Test connection with "Connected. The API key works.", the API address in use and the language table](images/06-settings.png)
+![The plugin settings: API key as $SUPERTEXT_API_KEY, Supertext API "Live", custom API address, the API key check with Test connection, the API address in use and the language table](images/06-settings.png)
 
 ## Languages
 
@@ -60,14 +62,23 @@ The plugin translates into the **language of each site**. Set the languages in *
 
 ![Settings → Sites: English en-US (primary), Deutsch de-CH, Français fr-CH and Italiano it-CH](images/08-sites.png)
 
-In the plugin settings, the **Languages** table lists every site. Per site you can set:
+In the plugin settings, the **Languages** table lists every site. Per site you set:
 
-- **Supertext language**: a different Supertext code, if the site's language isn't one Supertext knows or you want another region (e.g. `de-CH` for a site in `de`). Empty: the code comes from the site's language (shown as placeholder).
+- **Supertext language**: the language Supertext translates into (and from, when the site is the source). Choose it from Supertext's own list. Sites whose language **is** a Supertext code (apart from upper/lower case and `_`/`-`) are pre-filled, e.g. `de-CH`, `fr-CH`, `es`. Every other site needs a choice: the plugin never guesses a region, so a site in `de` needs *German (Germany)* `de-DE`, *German (Switzerland)* `de-CH` or *German (Austria)* `de-AT`. A site without one is marked *Not mapped*: it isn't translated (editors see *The language … has no Supertext language yet*), the other sites are.
+- **Form of address**: *Formal* (Sie, vous), *Informal* (du, tu) or *Default*. Supertext doesn't offer a choice for English, Swiss German, Romansh, Albanian and Serbian; the table warns when one is set for those (leave them on *Default*).
 
-How site languages become Supertext codes: Supertext needs the target language with a region. A site language with a region is used as it is (`de-CH`, `fr-CH`); a site language without one gets the usual region (`de` → `de-DE`, `fr` → `fr-FR`, `en` → `en-US`, `it` → `it-IT`, …). The source language is always sent without region (`en-US` → `en`). A *Supertext language* set for a site wins over its language.
-- **Form of address**: *Formal* (Sie, vous), *Informal* (du, tu) or *Default*.
+Supertext accepts exactly these codes (its `features` list, October 2026). The source language is always sent without region (`en-US` → `en`), from the same setting.
 
-![The Languages table: per site the language, an optional Supertext language code and the form of address](images/07-settings-languages.png)
+| Language | Supertext codes |
+| --- | --- |
+| German, English, French, Italian, Portuguese | `de-DE`, `de-CH`, `de-AT`, `en-US`, `en-GB`, `fr-FR`, `fr-CH`, `it-IT`, `it-CH`, `pt-PT`, `pt-BR` |
+| Chinese, Serbian | `zh-Hans`, `zh-Hant`, `sr-Latn`, `sr-Cyrl` |
+| Swiss German | `gsw-u-sd-chzh` (Zurich), `gsw-u-sd-chbe` (Bern) |
+| All others, without region | `bg`, `cs`, `da`, `el`, `es`, `fi`, `hr`, `hu`, `ja`, `ko`, `nb`, `nl`, `pl`, `rm`, `ru`, `sk`, `sl`, `sq`, `sv`, `tr` |
+
+A code that a site already had in an older version of the plugin and that isn't in this list stays selectable and is sent as it is.
+
+![The Languages table: per site the language, its Supertext language chosen from Supertext's list and the form of address](images/07-settings-languages.png)
 
 ## Which fields are translated
 
@@ -92,10 +103,28 @@ All settings are in *Settings → Plugins → Supertext Translation* and stored 
 | API key | `$SUPERTEXT_API_KEY` | The key or an environment variable reference. Required. |
 | Supertext API | Live | *Live* (`https://api.supertext.com/v1/`), *Staging* or *Testing*. |
 | Custom API address | – | A different base URL (proxy, test server); may be an environment variable such as `$SUPERTEXT_API_URL`. Overrides *Supertext API*. |
-| Languages | – | Per site: Supertext language code (default: the site's language, with the usual region if it has none, e.g. `de` → `de-DE`) and form of address. |
+| Languages | – | Per site: Supertext language (from Supertext's list; pre-filled when the site's language is a Supertext code, otherwise required for the site to be translated) and form of address. See [Languages](#languages). |
 | Timeout | 180 | Seconds to wait for the translation of one site. |
+| Send version information to Supertext | On | See [Version information and the API key check](#version-information-and-the-api-key-check). The environment variable `SUPERTEXT_VERSION_REPORTS=0` (or `false`, `off`, `no`) on the server turns it off regardless of the setting (`1` turns it on). |
 
 Translated slugs follow Craft's own slug rules: set `limitAutoSlugsToAscii` in `config/general.php` to get `chocolat-suisse-expedie` instead of `chocolat-suisse-expédié`.
+
+## Version information and the API key check
+
+**Send version information to Supertext** is on by default. The plugin then sends the site URL and the versions of this plugin, Craft CMS and PHP to Supertext when you save the plugin settings and after an update, so Supertext support can see which version you run. A report contains exactly: the site URL (the primary site's base URL), the plugin's name and version, the Craft CMS and PHP versions, the Supertext SDK version, whether an API key is set, the result of the API key check (status, time, HTTP status, Supertext's error code) and the address of the ping endpoint below. **No content, no API key and no personal data are sent.** Reports go from the Craft server, never from the browser, at most 3 seconds each; a report that fails is not retried for an hour and never slows down or breaks a save or a translation. To turn it off, switch the setting off and save, or set `SUPERTEXT_VERSION_REPORTS=0` in the server's environment: nothing is sent at all then, and the ping endpoint answers 404.
+
+When reports are sent:
+
+- after every save of the plugin settings (`installed` the first time, then `settings_saved`);
+- after an update of the plugin, Craft CMS or PHP, noticed on the next control panel request that uses the plugin (the settings page, the Supertext box, a translation, a queue job or console command), after the response has been sent;
+- when the result of the API key check changes (e.g. Supertext rejects the key during a translation);
+- by `php craft supertext-translation/translate/check`.
+
+**The API key check** runs whether or not version information is sent: after every save of the settings, on **Test connection**, on the next request after the key in the environment changed (the plugin compares a fingerprint of the key kept in its table, never the key itself), and when Supertext rejects the key during a translation. It's Supertext's cost-free `features` call. The settings page shows the latest result with its time.
+
+**The ping endpoint** `GET <site URL>/actions/supertext-translation/ping?challenge=…` (`index.php?p=actions/supertext-translation/ping` without `omitScriptNameInUrls`) is public (no login, no session, no CSRF token) and answers only `{"ok":true,"plugin":"CraftCms-Supertext-Translation","challenge":"…"}` with `Cache-Control: no-store`, so Supertext can see that the site is reachable from the internet. It returns nothing else: no versions, no settings, no data. Exclude it from static page caches (most exclude action requests anyway). The settings page shows its address while reports are on.
+
+The plugin keeps this state (what was reported last, the latest key check, the key's fingerprint) in its table `supertext_state`.
 
 ## Interface languages
 
@@ -112,9 +141,13 @@ The entry index action *Translate with Supertext* translates in Craft's queue. C
 | No Supertext box on the entry page | Craft has only one site, the entry exists in only one site, or the user lacks the *Translate entries with Supertext* permission. |
 | *Supertext is not set up yet* | The API key setting is empty or its environment variable isn't set on this server. |
 | *Authentication failed. Please check the Supertext API key.* | Wrong or revoked key, or a key for another environment (*Live* vs *Staging*). Use *Test connection*. |
+| *Supertext rejected the API key* (API key check) | The key is wrong or revoked. Check that the whole key is in `SUPERTEXT_API_KEY`, or generate a new one at [supertext.com → Integrations → API](https://www.supertext.com/en/integrations/api) (Admin role required). No Supertext account yet? [Create one](https://www.supertext.com/person/en/account/signin). Then *Test connection*. |
+| *The API key couldn't be checked because Supertext can't be reached* | The Craft server can't reach `api.supertext.com` (firewall, proxy, DNS). Translations need the same connection. |
+| *The language … has no Supertext language yet* / *Not mapped* in the Languages table | The site's language isn't a Supertext code (e.g. `de`, `zh-CN`). Choose its *Supertext language* in the plugin settings (see [Languages](#languages)). |
+| *Supertext offers no formal or informal tone for this language* | *Form of address* is *Formal* or *Informal* for a language without that choice (English, Swiss German, Romansh, Albanian, Serbian). Set it to *Default*. |
 | *You are not allowed to edit the entry in this site.* | The editor lacks *Edit* permission for that site or the section's save permissions. |
 | *The entry is not available in this site.* | The section doesn't propagate the entry to that site. Enable the site in the entry's *Status* panel or change the section's propagation. |
-| *Supertext does not support this language pair (en → xx-YY)* | The site's language (or its *Supertext language* in the plugin settings) isn't one Supertext offers. Set the *Supertext language* to a code such as `de-CH` or `fr`; the message shows the codes that were sent. |
+| *Supertext does not support this language pair (en → xx-YY)* | A *Supertext language* Supertext doesn't offer (e.g. a code kept from an older plugin version such as `es-ES` instead of `es`), or the same language as the source. Choose one from the list; the message shows the codes that were sent. |
 | *Too many requests to Supertext* | The API's per-second limit was hit repeatedly although the plugin retries. Try again shortly. |
 | *Your Supertext translation limit is exceeded.* | The Supertext subscription's quota is used up. |
 | *Timed out waiting for the Supertext translation* | Very long content. Raise *Timeout* (and PHP's `max_execution_time`). |

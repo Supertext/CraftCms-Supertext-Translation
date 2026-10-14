@@ -9,7 +9,8 @@ Open an entry, tick the sites to translate into and click **Translate**: the tit
 - Translated slugs, so translated pages get translated URLs
 - Sites with their own text are kept unless the editor explicitly overwrites them
 - Bulk translation from the entry index (in the queue)
-- Formal or informal tone and custom Supertext language codes per site; *Test connection* in the settings
+- A Supertext language and a formal or informal tone per site (chosen from Supertext's own language list, never guessed); automatic API key check and *Test connection* in the settings
+- Optional version information for Supertext support (on by default, can be turned off)
 - Craft permissions apply; console command for scripts
 
 ![The Translate with Supertext box on an entry](docs/images/01-translate-box.png)

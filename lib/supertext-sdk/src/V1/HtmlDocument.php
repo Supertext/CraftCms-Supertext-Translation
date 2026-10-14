@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace supertext\crafttranslation\sdk;
+namespace supertext\crafttranslation\sdk\V1;
 
 /**
  * Packs segments into the HTML document sent to Supertext and reads them back from the translation.

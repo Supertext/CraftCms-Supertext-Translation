@@ -4,14 +4,17 @@
 
 ### Added
 - French and Italian control panel texts, and German where it was missing: messages from Supertext (limit reached, authentication failed, timeouts and others) and the environment names in the settings now appear in the user's control panel language too. The "no API key" and "authentication failed" messages now also link to Supertext account sign-up.
+- Automatic API key check: after every save of the plugin settings (shown as a notice), on *Test connection*, when the key in the environment changed and when Supertext rejects the key during a translation. The settings page shows the latest result with its time (*the connection works*, *rejected*, *no key*, *Supertext can't be reached*, *error*), with the links to create a Supertext account and generate a key, in English, German, French and Italian. `php craft supertext-translation/translate/check` shows it too.
+- *Send version information to Supertext* (on by default; `SUPERTEXT_VERSION_REPORTS=0` on the server turns it off): when the settings are saved and after an update, the plugin sends the site URL, the plugin, Craft CMS, PHP and SDK versions, whether a key is set, the key check result and the ping address to Supertext, so Supertext support can see which version you run. No content, no API key and no personal data.
+- Public ping endpoint `actions/supertext-translation/ping` that only echoes Supertext's challenge, so Supertext can check the site is reachable (404 with version reports off).
+- New table `supertext_state` for the key check and the version reports (run `php craft up` after updating).
 
 ### Changed
-- All Supertext API calls now go through the official Supertext PHP SDK, bundled with the plugin (nothing extra to install). Behaviour stays the same.
+- All Supertext API calls now go through the official Supertext PHP SDK (0.2.1), bundled with the plugin (nothing extra to install).
+- **Languages are no longer guessed.** Each site's *Supertext language* is chosen from Supertext's own language list in the plugin settings; sites whose language is a Supertext code (`de-CH`, `fr-CH`, `es`, `zh-Hans`, apart from case and `_`/`-`) are pre-filled. Every other site needs a choice: a site in `de` needs German (Germany), (Switzerland) or (Austria). Sites without one are marked *Not mapped* and get the message *The language … has no Supertext language yet* (nothing is sent for them; the other sites are translated). The source language is sent without region, from the same setting. Older default regions were wrong for most languages (Supertext wants `es`, `sl`, `nl` without region, `zh-Hans` instead of `zh-CN`).
+- *Form of address* warns for languages where Supertext offers no formal/informal choice (English, Swiss German, Romansh, Albanian, Serbian), and such a translation gets its own message.
+- *Test connection* shows the API key check's result instead of "Connected".
 - An unsupported language pair now has its own message, naming the codes ("Supertext does not support this language pair (en → xx-YY)"), in English, German, French and Italian.
-
-### Fixed
-- Language codes with a variant or extension, e.g. a *Supertext language* `de-DE-1996` or `en-US-x-twain`, are now sent to Supertext as `de-DE` / `en-US` (Supertext rejected them).
-- Target languages without a region (e.g. a site in `de`) are now sent to Supertext as `de-DE` (`fr` → `fr-FR`, `en` → `en-US`, …); Supertext rejected them with "invalid language pair". The same applies to a *Supertext language* set without a region; codes with a region are used as before (normalized, e.g. `de_ch` → `de-CH`), and the source language is sent without region.
 
 ## 0.1.0 — 2026-10-07
 

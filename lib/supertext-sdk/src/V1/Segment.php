@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace supertext\crafttranslation\sdk;
+namespace supertext\crafttranslation\sdk\V1;
 
 /**
  * One text to translate: plain text (escaped on the way out, line breaks kept) or an HTML fragment.

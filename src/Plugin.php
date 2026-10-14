@@ -18,8 +18,13 @@ use craft\events\DefineHtmlEvent;
 use craft\events\RegisterElementActionsEvent;
 use craft\events\RegisterUserPermissionsEvent;
 use craft\services\UserPermissions;
+use supertext\crafttranslation\api\Languages;
+use supertext\crafttranslation\api\Reporting as ApiReporting;
 use supertext\crafttranslation\elements\actions\TranslateWithSupertext;
+use supertext\crafttranslation\helpers\Messages;
 use supertext\crafttranslation\models\Settings;
+use supertext\crafttranslation\sdk\V1\ApiKeyCheck;
+use supertext\crafttranslation\services\Reporting;
 use supertext\crafttranslation\services\Translator;
 use supertext\crafttranslation\web\assets\translate\TranslateAsset;
 use yii\base\Event;
@@ -29,23 +34,25 @@ use yii\base\Event;
  *
  * - Entry edit page: a "Supertext" box in the sidebar (choose sites, translate)
  * - Entry index: a "Translate with Supertext" action (queue jobs, missing translations only)
- * - Settings: API key, environment, languages and tone, Test connection
+ * - Settings: API key, environment, languages and tone, Test connection, version reports
  * - Console: php craft supertext-translation/translate
+ * - Commando Center: version reports, API key check, public ping (actions/supertext-translation/ping)
  *
  * @property-read Translator $translator
+ * @property-read Reporting $reporting
  * @method Settings getSettings()
  */
 class Plugin extends BasePlugin
 {
     public const PERMISSION = 'supertext-translation:translate';
 
-    public string $schemaVersion = '1.0.0';
+    public string $schemaVersion = '1.1.0';
     public bool $hasCpSettings = true;
 
     public static function config(): array
     {
         return [
-            'components' => ['translator' => Translator::class],
+            'components' => ['translator' => Translator::class, 'reporting' => Reporting::class],
         ];
     }
 
@@ -88,6 +95,36 @@ class Plugin extends BasePlugin
         return $this->get('translator');
     }
 
+    public function getReporting(): Reporting
+    {
+        /** @var Reporting */
+        return $this->get('reporting');
+    }
+
+    /**
+     * Every save of the plugin settings: the automatic API key check and the `installed`/`settings_saved`
+     * report. The check is shown as a notice, like on the settings page. Never fails the save.
+     */
+    public function afterSaveSettings(): void
+    {
+        parent::afterSaveSettings();
+        try {
+            $check = $this->getReporting()->afterSettingsSaved()?->check;
+            $request = Craft::$app->getRequest();
+            if ($check !== null && !$request->getIsConsoleRequest() && $request->getIsCpRequest()) {
+                $session = Craft::$app->getSession();
+                $text = strip_tags(Messages::keyCheck($check));
+                if ($check->status === ApiKeyCheck::OK) {
+                    $session->setNotice($text);
+                } else {
+                    $session->setError($text);
+                }
+            }
+        } catch (\Throwable $e) {
+            Craft::debug('Supertext key check after saving the settings skipped: ' . $e->getMessage(), __METHOD__);
+        }
+    }
+
     protected function createSettingsModel(): ?Model
     {
         return new Settings();
@@ -95,9 +132,30 @@ class Plugin extends BasePlugin
 
     protected function settingsHtml(): ?string
     {
+        $reporting = $this->getReporting();
+        $reporting->onRequest();
+        $settings = $this->getSettings();
+        $languages = [];
+        foreach (Craft::$app->getSites()->getAllSites() as $site) {
+            $target = $settings->targetCodeOrNull($site->handle, $site->language);
+            $languages[$site->handle] = [
+                'code' => $settings->languageCode($site->handle) ?: (string) Languages::match($site->language),
+                'target' => $target,
+                'politenessSupported' => $target !== null ? Languages::supportsPoliteness($target) : null,
+            ];
+        }
+        $check = $reporting->lastCheck();
+
         return Craft::$app->getView()->renderTemplate('supertext-translation/_settings', [
-            'settings' => $this->getSettings(),
+            'settings' => $settings,
             'sites' => Craft::$app->getSites()->getAllSites(),
+            'languages' => $languages,
+            'targets' => Languages::targets(),
+            'check' => $check,
+            'checkText' => $check !== null ? Messages::keyCheck($check) : null,
+            'reportsEnabled' => $reporting->enabled(),
+            'reportsForced' => ApiReporting::forcedByEnvironment(),
+            'pingUrl' => $reporting->callbackUrl($reporting->siteUrl()),
         ]);
     }
 

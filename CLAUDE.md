@@ -78,7 +78,9 @@ The user guide and installation guide of every plugin include screenshots of the
 
 AI file translation API v1, same as the WordPress plugin: POST HTML file → poll status → GET translation → DELETE. Details in `docs/DEVELOPER.md`. Never commit API keys; use the `SUPERTEXT_API_KEY` environment variable or the plugin's API key setting (an environment variable reference).
 
-Lessons from the live API, apply them here: header `Authorization: Supertext-Auth-Key <key>` (strip a pasted prefix), retry HTTP 429 (per-second rate limit), and keep a whole text in one `data-st-id` element (each one is translated on its own). **Language codes:** source = bare language (`en`), target = regional code (`de-DE`, `en-US`); Supertext rejects bare targets (`INVALID_LANGUAGE_PAIR`). Bare CMS locales get a regional default; see `docs/DEVELOPER.md` → *Language codes*.
+Lessons from the live API, apply them here: header `Authorization: Supertext-Auth-Key <key>` (strip a pasted prefix), retry HTTP 429 (per-second rate limit), and keep a whole text in one `data-st-id` element (each one is translated on its own). **Languages:** only the codes Supertext's `GET features` lists (the SDK's `Languages`, `supertext\crafttranslation\sdk\V1`): bare sources (`en`); targets regional only for de/en/fr/it/pt (`de-CH`, `en-US`), `zh-Hans`/`zh-Hant`, `sr-Latn`/`sr-Cyrl`, `gsw-u-sd-chzh`/`chbe`, bare for the rest (`es`, `nl`, `sl`). **No guessing:** the site's *Supertext language* setting, else an exact match, else the error `unsupported_language`. No default regions; see `docs/DEVELOPER.md` → *Language codes*.
+
+**Commando Center:** version reports, the automatic API key check and the public ping go through the SDK's `InstallationReporter` (`src/api/Reporting.php`, `src/services/Reporting.php`, state in the table `supertext_state`); see `docs/DEVELOPER.md` → *Commando Center*. Reporting must never break a save or a translation.
 
 ## This repo
 

@@ -11,6 +11,7 @@ namespace supertext\crafttranslation\migrations;
 use craft\db\Migration;
 use craft\db\Table;
 use supertext\crafttranslation\records\TranslationRecord;
+use supertext\crafttranslation\services\Reporting;
 
 class Install extends Migration
 {
@@ -34,12 +35,14 @@ class Install extends Migration
             $this->addForeignKey(null, TranslationRecord::TABLE, ['targetSiteId'], Table::SITES, ['id'], 'CASCADE');
             $this->addForeignKey(null, TranslationRecord::TABLE, ['userId'], Table::USERS, ['id'], 'SET NULL');
         }
+        m261014_000000_supertext_state::createStateTable($this);
 
         return true;
     }
 
     public function safeDown(): bool
     {
+        $this->dropTableIfExists(Reporting::STATE_TABLE);
         $this->dropTableIfExists(TranslationRecord::TABLE);
 
         return true;

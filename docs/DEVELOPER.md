@@ -28,14 +28,16 @@ apply(): set the values on the entry (and nested entries) in the target site, sa
 | Path | Responsibility |
 | --- | --- |
 | `src/Plugin.php` | Registers the permission `supertext-translation:translate`, the entry index action, the sidebar box (`Element::EVENT_DEFINE_SIDEBAR_HTML`), settings page, console controllers |
-| `src/api/` | Wrapper around the Supertext SDK (`SupertextClient`, `CallableTransport`), language codes, exception. No Craft dependencies (HTTP through a transport callable), unit-tested on their own |
+| `src/api/` | Wrapper around the Supertext SDK (`SupertextClient`, `CallableTransport`), language codes (`Languages`), Commando Center glue (`Reporting`), exception. No Craft dependencies (HTTP through a transport callable), unit-tested on their own |
 | `lib/supertext-sdk/` | Bundled copy of the Supertext PHP SDK, namespace `supertext\crafttranslation\sdk` (see *Supertext SDK*) |
 | `src/services/Translator.php` | Field rules, "already translated" check, translation, saving |
-| `src/controllers/TranslateController.php` | Control panel actions `info`, `entry`, `test-connection` (admins) |
+| `src/controllers/TranslateController.php` | Control panel actions `info`, `entry`, `test-connection` (admins: the API key check) |
+| `src/controllers/PingController.php` | Public `actions/supertext-translation/ping` for the Commando Center |
+| `src/services/Reporting.php` | Commando Center on Craft: site URL, versions, when the reporter runs, its state in the table `supertext_state` |
 | `src/elements/actions/TranslateWithSupertext.php`, `src/jobs/TranslateEntryJob.php` | Bulk translation in the queue (missing sites only) |
 | `src/console/controllers/TranslateController.php` | `php craft supertext-translation/translate <entryId> [--from=en] [--to=de,fr] [--overwrite]`, `php craft supertext-translation/translate/check` |
 | `src/models/Settings.php`, `src/templates/_settings.twig` | Settings (project config; API key as `$SUPERTEXT_API_KEY`) |
-| `src/records/TranslationRecord.php`, `src/migrations/Install.php` | Table `supertext_translations`: last Supertext translation per entry and site |
+| `src/records/TranslationRecord.php`, `src/migrations/` | Table `supertext_translations` (last Supertext translation per entry and site) and `supertext_state` (`m261014_000000_supertext_state`: the reporter's state) |
 | `src/translations/{de,fr,it}/supertext-translation.php` | German, French and Italian strings (keys are the English source strings) |
 | `src/helpers/Messages.php` | Shows a `SupertextException` from the API client in the user's language (by its `reason`), falling back to the client's English message |
 
@@ -60,7 +62,7 @@ Each value is one `data-st-id` element, so a whole rich-text field (all its para
 
 Shared with the WordPress plugin and every other Supertext CMS plugin:
 
-1. `POST {base}translate/ai/file`: multipart with `file` (part `Content-Type` exactly `text/html`, no charset, or the API answers 415), `target_lang` (with a region, e.g. `de-CH`), optional `source_lang` (bare language, e.g. `en`); see *Language codes*, optional `politeness` (`more`/`less`). Returns `{file_id}`.
+1. `POST {base}translate/ai/file`: multipart with `file` (part `Content-Type` exactly `text/html`, no charset, or the API answers 415), `target_lang` (a Supertext target code, e.g. `de-CH` or `es`), optional `source_lang` (bare language, e.g. `en`); see *Language codes*, optional `politeness` (`more`/`less`). Returns `{file_id}`.
 2. `GET …/{file_id}/status` until `done` (`error`, `limit_exceeded`, `deleted` are terminal).
 3. `GET …/{file_id}/translation` returns the translated HTML.
 4. `DELETE …/{file_id}` (files also expire after 24 h).
@@ -71,9 +73,9 @@ Auth header: `Authorization: Supertext-Auth-Key <key>`. The header name must be 
 
 ## Supertext SDK
 
-The protocol above, the retries, the language codes and the `data-st-id` document come from the official Supertext PHP SDK ([Supertext/Supertext-API-SDK-and-Guide](https://github.com/Supertext/Supertext-API-SDK-and-Guide)). The plugin ships a copy in `lib/supertext-sdk/` with its namespace changed from `Supertext\Sdk` to `supertext\crafttranslation\sdk` (Composer autoloads it from the plugin's `composer.json`), so sites install nothing extra and another package that requires the SDK itself can't clash with it. `lib/supertext-sdk/COMMIT` names the SDK revision.
+The protocol above, the retries, the language list, the key check, the version reports and the `data-st-id` document come from the official Supertext PHP SDK ([Supertext/Supertext-API-SDK-and-Guide](https://github.com/Supertext/Supertext-API-SDK-and-Guide), 0.2.1). The plugin ships a copy in `lib/supertext-sdk/` with its namespace changed from `Supertext\Sdk` to `supertext\crafttranslation\sdk` (everything that talks to the API is in its `V1` sub-namespace, `supertext\crafttranslation\sdk\V1`, folder `src/V1/`; Composer autoloads it from the plugin's `composer.json`), so sites install nothing extra and another package that requires the SDK itself can't clash with it. `lib/supertext-sdk/COMMIT` names the SDK revision.
 
-- Never edit `lib/supertext-sdk/`. Fix the SDK in its repository, then run `scripts/vendor-sdk.sh [ref]` (default `main`; `SDK_DIR=/path/to/clone` uses a local clone) and the tests.
+- Never edit `lib/supertext-sdk/`. Fix the SDK in its repository, then run `scripts/vendor-sdk.sh [ref]` (default `main`; `SDK_DIR=/path/to/clone` uses a local clone) and the tests. The script copies `sdk/php/src` with its subfolders and rewrites every `Supertext\Sdk\…` namespace (`V1` and `Http` included).
 - `src/api/SupertextClient.php` keeps the plugin's interface (`translateDocument`, `translateSegments`, `validateApiKey`, transport callable) and turns every SDK error code into a `SupertextException` reason (`REASONS`); `helpers/Messages::of()` translates it. A new SDK error code needs a reason there, a `match` arm in `Messages` and its strings in `de`, `fr` and `it`.
 - The demo installs the plugin from `demo/project/composer.lock`, which records the plugin's autoload paths: after changing `autoload` in `composer.json`, run `composer update supertext/craft-supertext-translation --no-install` in `demo/project` and commit the lock (otherwise the demo can't load the SDK classes).
 - PHPStan analyses `src/` only; the SDK has its own checks in its repository.
@@ -82,14 +84,31 @@ The protocol above, the retries, the language codes and the `data-st-id` documen
 
 ## Language codes
 
-Supertext wants the **source as a bare language** (`en`, `de`, `fr`) and the **target as a regional code** (`de-DE`, `fr-CH`, `en-US`). A bare target such as `de`, or a regional source such as `en-US`, is rejected with `INVALID_LANGUAGE_PAIR`. Translating within one language (`en` → `en-GB`) is allowed.
+Supertext accepts exactly the codes its `GET features` lists (the SDK's `Languages`, from the live API): bare sources (`en`, `de`); targets in one exact form each, regional for German, English, French, Italian and Portuguese (`de-CH`, `en-US`, `pt-BR`), with a script for Chinese and Serbian (`zh-Hans`, `sr-Latn`), a dialect for Swiss German (`gsw-u-sd-chzh`), bare for the others (`es`, `nl`, `sl`). Anything else is HTTP 404 `INVALID_LANGUAGE_PAIR`; formal/informal for a target without it (`en-US`, `rm`, `sq`, `sr-*`, `gsw-*`) is HTTP 400 `FEATURE_ERROR` (`unsupported_feature`).
 
-`src/api/LanguageCodes.php` (the SDK's `LanguageCodes` plus the per-site override; no Craft dependency, `tests/unit/LanguageCodesTest.php`) turns the site's language into the codes sent:
+`src/api/Languages.php` (the SDK's `Languages` plus the per-site setting; no Craft dependency, `tests/unit/LanguagesTest.php`) resolves a site, **without guessing**:
 
-- **Source:** the bare language of the source site's *Supertext language* override, else of the site's language (`en-US` → `en`).
-- **Target:** the target site's *Supertext language* override if set (normalized: `de_ch` → `de-CH`), else the site's language. Either way, a code with a region keeps it (`de_CH`/`de-ch` → `de-CH`; scripts and numeric regions such as `zh-Hant`, `es-419` keep their form; variants and extensions are dropped: `de-DE-1996` → `de-DE`, `en-US-x-twain` → `en-US`); a bare language gets its default region: ar→ar-SA, bg→bg-BG, cs→cs-CZ, da→da-DK, de→de-DE, el→el-GR, en→en-US, es→es-ES, et→et-EE, fi→fi-FI, fr→fr-FR, hr→hr-HR, hu→hu-HU, it→it-IT, ja→ja-JP, ko→ko-KR, lt→lt-LT, lv→lv-LV, nb→nb-NO, nl→nl-NL, pl→pl-PL, pt→pt-PT, ro→ro-RO, ru→ru-RU, sk→sk-SK, sl→sl-SI, sr→sr-RS, sv→sv-SE, th→th-TH, tr→tr-TR, uk→uk-UA, vi→vi-VN, zh→zh-CN (same table as the other Supertext plugins). Unknown bare codes are sent unchanged, so Supertext's error names them.
+- **Target:** the site's *Supertext language* (`languages[<handle>][code]` in the settings, sent as it is, even a code the SDK's list doesn't know yet); else the site's language if it equals a Supertext code apart from case and `_`/`-` (`de-CH`, `fr_ch` → `fr-CH`, `es`); else `SupertextException` with reason `unsupported_language` (the site language as `{0}`), which the translator reports for that site without calling Supertext. No default regions: a site in `de` must be mapped.
+- **Source:** the same setting as the SDK's mapping (`Languages::source($siteLanguage, [$siteLanguage => $code])`): the source form of the mapped code (`de-CH` → `de`) or of the site language (`en-US` → `en`), else `unsupported_language`.
+- **Settings page:** the select lists `Languages::targets()` (name and code), pre-filled with `Languages::match()` (exact match) when the site has no code yet; a stored code not in the list is kept as an extra option. *Not mapped* marks sites without a target; a warning appears when *Form of address* is set for a target where `supportsPoliteness()` is false. The value is still sent (Supertext answers `unsupported_feature`, shown per site), so a setting is never dropped silently.
 
-`SupertextClient` applies the same rule to whatever it is given, and the stand-in (`tests/docs/stand-in.mjs`) rejects bare targets and regional sources like the real API.
+`SupertextClient` sends the codes it is given; the stand-in (`tests/docs/stand-in.mjs`) accepts exactly Supertext's list and answers anything else with 404 `INVALID_LANGUAGE_PAIR`, like the real API.
+
+## Commando Center: version reports, key check, ping
+
+Protocol: [Commando-Center-Supertext-Translation](https://github.com/Supertext/Commando-Center-Supertext-Translation) → `docs/DEVELOPER.md` → *Report protocol*. The SDK's `InstallationReporter`, `checkApiKey()`, `reportsEnabled()` and `pingResponse()` implement it; `src/api/Reporting.php` (no Craft classes) loads the state, runs one reporter action and stores the new state, never throwing; `src/services/Reporting.php` gives it what Craft knows.
+
+- **Setting:** `Settings::$versionReports` (*Send version information to Supertext*, on by default, lightswitch on the settings page). `SUPERTEXT_VERSION_REPORTS` (`0/false/off/no`, `1/true/on/yes`) on the server wins (`reportsEnabled()`); the page says so. Off: no reports, ping 404. `SUPERTEXT_REPORT_URL` sends reports elsewhere (CI, screenshots: the stand-in's `POST /report`).
+- **Report fields:** `site_url` = the primary site's base URL (else the request's host; console without one: nothing is reported, the key check still runs); plugin `CraftCms-Supertext-Translation` with `Plugin::getVersion()` (Composer's version, i.e. the Git tag); system `Craft CMS` with `Craft::$app->getVersion()`; runtime PHP; `callback.url` = `<site>/actions/supertext-translation/ping` (`<site>/index.php?p=actions/…` without `omitScriptNameInUrls`). HTTP goes through the plugin's Guzzle transport, with the SDK's timeouts (3 s per report, 10 s for the key check).
+- **When:**
+  - `afterSettingsSaved`: `Plugin::afterSaveSettings()`, which Craft calls from `Plugins::savePluginSettings()` (every save in the control panel, and the demo setup's). The check is shown as a notice (ok) or error flash. Applying project config on another environment doesn't call it; the next request there runs `onRequest`.
+  - `onRequest`: the settings page, `translate/info` (the Supertext box), the end of every `Translator::translate()` (control panel action, queue job, console command). On web requests it runs once, after the response was sent (`Response::EVENT_AFTER_SEND`, after `fastcgi_finish_request()` where available); on console and queue right away.
+  - `authenticationFailed`: a translation failed with reason `auth_failed` (HTTP 401/403); replaces `onRequest` for that request.
+  - `testConnection`: *Test connection* (`translate/test-connection`, returns `{ ok, status, message, checkedAt }`).
+  - `translate/check` (console): `testConnection`, then `reportCheck` if that sent nothing.
+- **State:** one row (`name = 'reporter'`, the SDK's JSON) in `supertext_state`. Load and save errors (e.g. before `craft up` created the table) are swallowed: the state is just empty then. The API key is never stored or logged; only the SDK's fingerprint is kept.
+- **Ping:** `controllers/PingController` (`$allowAnonymous = true`, no CSRF, GET only) sends `pingResponse()`'s status, headers and body as they are.
+- **Messages:** `helpers/Messages::keyCheck()` has the center's five texts in four languages, with the account and API key links (new tab) for `invalid` and `missing`.
 
 ## Local development
 
@@ -116,9 +135,11 @@ composer install
 vendor/bin/phpunit
 ```
 
-- `tests/unit/SupertextClientTest.php`: the SDK wrapper: protocol, auth header and prefix, 429 retries, error reasons (language pair included), clean-up, segments (plain text, HTML, blank, missing) and splitting into several documents.
+- `tests/unit/SupertextClientTest.php`: the SDK wrapper: protocol, codes sent as given, auth header and prefix, 429 retries, error reasons (language pair and missing tone included), the key check, clean-up, segments (plain text, HTML, blank, missing) and splitting into several documents.
+- `tests/unit/LanguagesTest.php`: the per-site setting wins, exact matches, no default regions (`de`, `es-ES`, `zh-CN` → `unsupported_language`), sources from the same setting, the politeness list.
+- `tests/unit/ReportingTest.php`: with a fake transport and in-memory storage: `installed`/`settings_saved` after a save (fields, 3 s timeout, never the key), nothing due on a plain request, `upgraded`, a 401/403 reported once, *Test connection*, the `check` report, nothing sent with reports off or without a site URL, the one-hour back-off, broken storage, ping answers, the environment variable.
 - `tests/unit/TranslationsTest.php`: every string passed to `Craft::t('supertext-translation', …)`, `|t('supertext-translation')` or listed in `TranslateAsset::MESSAGES` is in the German, French and Italian files (and nothing else is), with the same placeholders, tags and URLs; every `t()` in the edit-page JavaScript is in `TranslateAsset::MESSAGES`.
-- `tests/demo-check.sh` (CI): the demo image on PostgreSQL with the stand-in, started twice: demo accounts created once and never duplicated, no passwords in the log, the Editors group, `translate/check`, translation of the sample article into three sites (title, ASCII slug, rich text markup, nested Matrix entries), the skip on a second run, and the German front-end page.
+- `tests/demo-check.sh` (CI): the demo image on PostgreSQL with the stand-in, started twice: demo accounts created once and never duplicated, no passwords in the log, the Editors group, `translate/check`, translation of the sample article into three sites (title, ASCII slug, rich text markup, nested Matrix entries), the skip on a second run, the German front-end page, and the Commando Center: the public ping (200 and 400) and the `installed` and `check` reports received by the stand-in (`SUPERTEXT_REPORT_URL`), with the plugin, Craft version and callback URL and never the key.
 
 CI (`.github/workflows/ci.yml`) on every push and pull request: **test** (PHP 8.2, 8.3 and 8.4: lint and PHPUnit), **phpstan** (see *Code quality and security checks*) and **demo** (builds `demo/Dockerfile`, runs `tests/demo-check.sh`).
 
@@ -138,7 +159,7 @@ The public demo is a container built from `demo/Dockerfile`: PHP 8.3 with Apache
 | `project/` | The Craft project: `composer.json`/`.lock`, `config/` (Pro edition is set by the setup; ASCII slugs), front-end `templates/` with a language switcher, and `modules/supertextdemo` with the `supertext-demo/setup` console command |
 | `.env.example` | The variables below |
 
-**Demo setup** (`php craft supertext-demo/setup`, every start, only adds what is missing): Craft Pro (user groups), the four sites, fields *Summary* (Plain Text), *Body* (CKEditor with lists), *Highlights* (Matrix with *Highlight* entries: title and text), section *Articles* (all sites), the sample article, the plugin settings (key `$SUPERTEXT_API_KEY`, URL `$SUPERTEXT_API_URL`, formal tone for German, French and Italian), the user group **Editors** and the demo accounts.
+**Demo setup** (`php craft supertext-demo/setup`, every start, only adds what is missing): Craft Pro (user groups), the four sites, fields *Summary* (Plain Text), *Body* (CKEditor with lists), *Highlights* (Matrix with *Highlight* entries: title and text), section *Articles* (all sites), the sample article, the plugin settings (key `$SUPERTEXT_API_KEY`, URL `$SUPERTEXT_API_URL`, formal tone for German, French and Italian; the sites' languages `en-US`, `de-CH`, `fr-CH`, `it-CH` are Supertext codes, so no Supertext language needs choosing), the user group **Editors** and the demo accounts.
 
 **No volume:** Railway's volume limit for the project is reached, and the demo needs none: content and project config are in PostgreSQL (Craft writes `config/project/*.yaml` from the database on start). Uploaded files would disappear with the next deploy.
 
@@ -152,6 +173,7 @@ The public demo is a container built from `demo/Dockerfile`: PHP 8.3 with Apache
 | `DEMO_EDITOR_EMAIL`, `DEMO_EDITOR_PASSWORD` | Editor for automated tests and screenshots: member of **Editors** (control panel, every site, articles incl. other authors' entries, *Translate entries with Supertext*). Craft has no built-in editor role, so the demo creates this group. |
 | `SUPERTEXT_API_KEY` | Supertext key (the plugin setting references it) |
 | `SUPERTEXT_API_URL` | Optional, e.g. a stand-in API |
+| `SUPERTEXT_VERSION_REPORTS` | Optional; `0` turns the version reports to Supertext off (default on: the demo reports like any installation) |
 | `PORT` | Port Apache listens on (Railway sets it) |
 
 Railway also sets `RAILWAY_PUBLIC_DOMAIN`; the entrypoint makes `PRIMARY_SITE_URL` from it (the sites are `/`, `/de/`, `/fr/`, `/it/`).
@@ -180,7 +202,7 @@ The images in `docs/images/` are generated by `tests/docs/screenshots.mjs` (Play
 
 ```bash
 cd tests/docs && npm install && npx playwright install chromium
-npm run stand-in &
+npm run stand-in &   # also the Commando Center: start the demo with SUPERTEXT_REPORT_URL=http://127.0.0.1:8765/report
 # a fresh demo with SUPERTEXT_API_URL=http://127.0.0.1:8765/v1/ and DEMO_* set, served on :8090
 BASE_URL=http://127.0.0.1:8090 DEMO_ADMIN_EMAIL=… DEMO_ADMIN_PASSWORD=… \
   DEMO_EDITOR_EMAIL=… DEMO_EDITOR_PASSWORD=… npm run screenshots
@@ -220,4 +242,5 @@ Planned: submit the package to Packagist and the Craft Plugin Store.
 - Supported field types: Plain Text, CKEditor, Redactor, Matrix. Not yet: Table cells, Link field labels, SEO plugin fields, entries nested inside CKEditor fields, categories, global sets and assets (alt text).
 - Matrix fields that keep separate nested entries per site ("Only save entries to the site they were created in") are not translated.
 - Not in the Plugin Store / on Packagist yet.
+- The language list is the SDK's (October 2026); a language Supertext adds later can be used before the SDK knows it only if the site already stores its code. A future version could read `GET features` live.
 - Human (professional) translation orders are not supported yet (the WordPress plugin has them).

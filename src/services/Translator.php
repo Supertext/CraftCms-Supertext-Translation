@@ -46,7 +46,7 @@ class Translator extends Component
     /** Slugs made of words ("swiss-chocolate-shipped-worldwide") are translated as words. */
     private const SLUG = '/^[\p{Ll}\p{N}]+(?:-[\p{Ll}\p{N}]+)+$/u';
 
-    /** @var (callable(string, string, array<string, string>, ?string): array{status: int, body: string, headers: array<string, string>})|null Tests only. */
+    /** @var (callable(string, string, array<string, string>, ?string, float): array{status: int, body: string, headers: array<string, string>})|null Tests only. */
     public $transport = null;
 
     /**
@@ -97,10 +97,17 @@ class Translator extends Component
         }
 
         $settings = Plugin::getInstance()->getSettings();
-        $client = $this->client();
+        $reporting = Plugin::getInstance()->getReporting();
+        try {
+            $client = $this->client();
+        } catch (SupertextException $e) {
+            $reporting->onRequest();
+            throw $e;
+        }
         $sourceSite = Craft::$app->getSites()->getSiteById($sourceSiteId);
         $units = $this->collectUnits($source);
         $results = [];
+        $rejected = null;
 
         foreach (array_unique(array_map('intval', $targetSiteIds)) as $siteId) {
             if ($siteId === $sourceSiteId) {
@@ -136,18 +143,21 @@ class Translator extends Component
             } catch (\Throwable $e) {
                 if (!$e instanceof SupertextException) {
                     Craft::error($e, __METHOD__);
+                } elseif ($e->reason === 'auth_failed') {
+                    $rejected = $e->getCode();
                 }
                 $results[] = $result + ['status' => self::STATUS_ERROR, 'message' => Messages::of($e)];
             }
         }
 
-        return $results;
-    }
+        // Commando Center: a rejected key marks the key check invalid; otherwise version changes are reported.
+        if ($rejected !== null) {
+            $reporting->authenticationFailed($rejected);
+        } else {
+            $reporting->onRequest();
+        }
 
-    /** Cost-free check of the API key. */
-    public function testConnection(): void
-    {
-        $this->client()->validateApiKey();
+        return $results;
     }
 
     public function client(): SupertextClient
@@ -376,8 +386,9 @@ class Translator extends Component
     /** HTTP through Craft's Guzzle client (proxy settings etc. apply). */
     public static function guzzleTransport(): callable
     {
-        return static function (string $method, string $url, array $headers, ?string $body): array {
-            $response = Craft::createGuzzleClient(['timeout' => 60, 'http_errors' => false])->request($method, $url, [
+        return static function (string $method, string $url, array $headers, ?string $body, ?float $timeout = null): array {
+            $seconds = $timeout !== null && $timeout > 0 ? $timeout : 60.0;
+            $response = Craft::createGuzzleClient(['timeout' => $seconds, 'connect_timeout' => min($seconds, 10.0), 'http_errors' => false])->request($method, $url, [
                 'headers' => $headers,
                 'body' => $body,
             ]);

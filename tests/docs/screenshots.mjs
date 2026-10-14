@@ -1,7 +1,9 @@
 #!/usr/bin/env node
 /**
  * Regenerates docs/images from a freshly set-up demo (no translations yet) whose plugin
- * talks to stand-in.mjs (SUPERTEXT_API_URL=http://127.0.0.1:8765/v1/). See docs/DEVELOPER.md.
+ * talks to stand-in.mjs (SUPERTEXT_API_URL=http://127.0.0.1:8765/v1/, and
+ * SUPERTEXT_REPORT_URL=http://127.0.0.1:8765/report so nothing reaches the live Commando Center).
+ * See docs/DEVELOPER.md.
  *
  *   BASE_URL (default http://127.0.0.1:8090)
  *   DEMO_ADMIN_EMAIL / DEMO_ADMIN_PASSWORD     settings, sites, permissions (admin)
@@ -87,11 +89,14 @@ async function shot(page, locator, name, margin = 10) {
   await go(page, '/admin/settings/plugins/supertext-translation')
   await page.locator('[data-supertext-test-button]').click()
   await page.locator('[data-supertext-test-result].success, [data-supertext-test-result].error').waitFor({ timeout: 20_000 })
-  await page.evaluate((live) => {
+  await page.evaluate(([live, site]) => {
+    // The live API instead of the stand-in, the public demo instead of the local address (ping URL).
     const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT)
-    for (let n = walker.nextNode(); n; n = walker.nextNode()) if (n.textContent.includes('127.0.0.1')) n.textContent = n.textContent.replace(/http:\/\/127\.0\.0\.1:\d+\/v1\//, live)
+    for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+      if (n.textContent.includes('127.0.0.1')) n.textContent = n.textContent.replace(/http:\/\/127\.0\.0\.1:\d+\/v1\//, live).replace(/https?:\/\/127\.0\.0\.1:\d+\//, site)
+    }
     document.querySelectorAll('input').forEach((i) => { if (i.value.includes('127.0.0.1')) i.value = live })
-  }, LIVE_API)
+  }, [LIVE_API, SITE_URL])
   const form = page.locator('#main-content, #content').first()
   const r = await form.boundingBox()
   await page.screenshot({ path: OUT + '06-settings.png', clip: { x: r.x, y: 0, width: Math.min(1280 - r.x, 1054), height: 900 } })

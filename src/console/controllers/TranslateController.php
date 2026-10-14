@@ -11,14 +11,15 @@ namespace supertext\crafttranslation\console\controllers;
 use Craft;
 use craft\console\Controller;
 use craft\helpers\Console;
-use supertext\crafttranslation\api\SupertextException;
+use supertext\crafttranslation\helpers\Messages;
 use supertext\crafttranslation\Plugin;
+use supertext\crafttranslation\sdk\V1\ApiKeyCheck;
 use supertext\crafttranslation\services\Translator;
 use yii\console\ExitCode;
 
 /**
  * php craft supertext-translation/translate <entryId> --from=en --to=de,fr [--overwrite]
- * php craft supertext-translation/translate/check
+ * php craft supertext-translation/translate/check   API key check and a `check` version report
  */
 class TranslateController extends Controller
 {
@@ -84,18 +85,29 @@ class TranslateController extends Controller
         return $failed ? ExitCode::UNSPECIFIED_ERROR : ExitCode::OK;
     }
 
-    /** Checks the API key against the Supertext API (cost-free). */
+    /**
+     * Checks the API key against the Supertext API (cost-free) and sends a `check` version report to
+     * Supertext (unless version reports are off). Fails unless the key check is ok.
+     */
     public function actionCheck(): int
     {
-        try {
-            Plugin::getInstance()->getTranslator()->testConnection();
-        } catch (SupertextException $e) {
-            $this->stderr($e->getMessage() . "\n", Console::FG_RED);
-
-            return ExitCode::UNSPECIFIED_ERROR;
+        $plugin = Plugin::getInstance();
+        $reporting = $plugin->getReporting();
+        $result = $reporting->check();
+        $check = $result['check'];
+        $text = strip_tags(Messages::keyCheck($check));
+        if (\in_array($check->status, [ApiKeyCheck::INVALID, ApiKeyCheck::MISSING], true)) {
+            $text .= ' (' . Messages::SIGNUP_URL . ', ' . Messages::API_KEY_URL . ')';
         }
-        $this->stdout("Connected to " . Plugin::getInstance()->getSettings()->getBaseUrl() . ". The API key works.\n", Console::FG_GREEN);
+        $ok = $check->status === ApiKeyCheck::OK;
+        $this->stdout('Supertext Translation ' . $plugin->getVersion() . ', API ' . $plugin->getSettings()->getBaseUrl() . "\n");
+        $this->stdout($text . "\n", $ok ? Console::FG_GREEN : Console::FG_RED);
+        $this->stdout('Version report to Supertext: ' . match (true) {
+            !$reporting->enabled() => 'off',
+            $result['sent'] => 'sent (' . $result['event'] . ')',
+            default => 'not sent',
+        } . "\n");
 
-        return ExitCode::OK;
+        return $ok ? ExitCode::OK : ExitCode::UNSPECIFIED_ERROR;
     }
 }

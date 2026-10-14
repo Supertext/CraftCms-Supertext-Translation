@@ -36,11 +36,18 @@
 }) }}
 
 <div class="field" data-supertext-test>
-    <div class="heading"><label>{{ 'Connection'|t('supertext-translation') }}</label></div>
+    <div class="heading"><label>{{ 'API key check'|t('supertext-translation') }}</label></div>
     <div class="instructions"><p>{{ 'Checks the saved API key against the Supertext API. Nothing is translated or charged.'|t('supertext-translation') }}</p></div>
+    <p data-supertext-test-result aria-live="polite" class="{{ check ? (check.status == 'ok' ? 'success' : 'error') : 'light' }}">
+        {%- if check -%}
+            {{ (check.status == 'ok' ? '✓ ' : '') }}{{ checkText|raw }}
+            <span class="light" data-supertext-test-time>({{ 'checked {time}'|t('supertext-translation', { time: check.checkedAt|datetime('short') }) }})</span>
+        {%- else -%}
+            {{ 'Not checked yet.'|t('supertext-translation') }}
+        {%- endif -%}
+    </p>
     <div class="flex">
         <button type="button" class="btn" data-supertext-test-button>{{ 'Test connection'|t('supertext-translation') }}</button>
-        <span data-supertext-test-result aria-live="polite"></span>
     </div>
     <p class="light">{{ 'API address in use:'|t('supertext-translation') }} <code>{{ settings.getBaseUrl() }}</code></p>
 </div>
@@ -48,7 +55,7 @@
 <hr>
 
 <h2>{{ 'Languages'|t('supertext-translation') }}</h2>
-<p>{{ 'Each site is translated into its language. Change the Supertext language code if Supertext needs a different one, and choose the form of address.'|t('supertext-translation') }}</p>
+<p>{{ 'Each site is translated into its Supertext language. Sites whose language is a Supertext language are pre-filled; choose one for every other site. Supertext doesn’t guess a region: a site in “de” needs German (Germany), German (Switzerland) or German (Austria).'|t('supertext-translation') }}</p>
 <table class="data fullwidth" data-supertext-languages>
     <thead>
         <tr>
@@ -61,16 +68,29 @@
     <tbody>
         {% for site in sites %}
             {% set config = settings.languages[site.handle] ?? {} %}
+            {% set info = languages[site.handle] %}
+            {% set options = [{ value: '', label: '—' }] %}
+            {% set known = info.code == '' %}
+            {% for target in targets %}
+                {% set options = options|merge([{ value: target.code, label: target.name ~ ' (' ~ target.code ~ ')' }]) %}
+                {% if target.code == info.code %}{% set known = true %}{% endif %}
+            {% endfor %}
+            {% if not known %}
+                {# A code the SDK's list doesn't know (e.g. one Supertext added later): kept, sent as it is. #}
+                {% set options = options|merge([{ value: info.code, label: info.code }]) %}
+            {% endif %}
             <tr>
                 <td>{{ site.name }}</td>
                 <td><code>{{ site.language }}</code></td>
                 <td>
-                    {{ forms.text({
+                    {{ forms.select({
                         name: 'languages[' ~ site.handle ~ '][code]',
-                        value: config.code ?? '',
-                        placeholder: settings.targetCode(site.handle, site.language),
-                        size: 10,
+                        value: info.code,
+                        options: options,
                     }) }}
+                    {% if info.target is null %}
+                        <p class="error" data-supertext-not-mapped>{{ 'Not mapped: choose a Supertext language, or this site isn’t translated.'|t('supertext-translation') }}</p>
+                    {% endif %}
                 </td>
                 <td>
                     {{ forms.select({
@@ -82,6 +102,9 @@
                             { value: 'less', label: 'Informal (du, tu)'|t('supertext-translation') },
                         ],
                     }) }}
+                    {% if (config.politeness ?? 'default') != 'default' and info.politenessSupported is same as(false) %}
+                        <p class="warning">{{ 'Supertext offers no formal/informal choice for this language: set it to Default.'|t('supertext-translation') }}</p>
+                    {% endif %}
                 </td>
             </tr>
         {% endfor %}
@@ -98,18 +121,33 @@
     size: 6,
 }) }}
 
+<hr>
+
+{{ forms.lightswitchField({
+    label: 'Send version information to Supertext'|t('supertext-translation'),
+    instructions: 'Sends the site URL and the versions of this plugin, the CMS and the runtime to Supertext when you save these settings and after an update, so Supertext support can see which version you run. No content, no API key and no personal data are sent.'|t('supertext-translation'),
+    id: 'versionReports',
+    name: 'versionReports',
+    on: settings.versionReports,
+    warning: reportsForced ? (reportsEnabled
+        ? 'SUPERTEXT_VERSION_REPORTS is set on this server: version information is sent regardless of this setting.'|t('supertext-translation')
+        : 'SUPERTEXT_VERSION_REPORTS is set on this server: nothing is sent, regardless of this setting.'|t('supertext-translation')) : null,
+}) }}
+{% if reportsEnabled and pingUrl %}
+    <p class="light">{{ 'Supertext checks that the site is reachable at:'|t('supertext-translation') }} <code>{{ pingUrl }}</code></p>
+{% endif %}
+
 {% js %}
 (function () {
     const button = document.querySelector('[data-supertext-test-button]');
     const result = document.querySelector('[data-supertext-test-result]');
     button.addEventListener('click', async () => {
         button.classList.add('loading');
-        result.className = '';
-        result.textContent = '';
         try {
             const response = await Craft.sendActionRequest('POST', 'supertext-translation/translate/test-connection');
-            result.className = 'success';
-            result.textContent = '✓ ' + response.data.message;
+            result.className = response.data.ok ? 'success' : 'error';
+            // The message is the plugin's own translated text (links included).
+            result.innerHTML = (response.data.ok ? '✓ ' : '') + response.data.message;
         } catch (e) {
             result.className = 'error';
             result.textContent = e?.response?.data?.message ?? String(e);

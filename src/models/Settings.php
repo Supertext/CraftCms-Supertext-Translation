@@ -10,7 +10,7 @@ namespace supertext\crafttranslation\models;
 
 use craft\base\Model;
 use craft\helpers\App;
-use supertext\crafttranslation\api\LanguageCodes;
+use supertext\crafttranslation\api\Languages;
 use supertext\crafttranslation\api\SupertextClient;
 
 /**
@@ -36,7 +36,9 @@ class Settings extends Model
     public string $saveMode = self::SAVE_DRAFT;
 
     /**
-     * Per site handle: Supertext language code (empty: the site's language) and tone.
+     * Per site handle: Supertext language code and tone. Without a code, the site's language is used if it
+     * is a Supertext code itself (apart from case and "_"/"-"); otherwise the site has no Supertext language
+     * and isn't translated (no default regions, see api/Languages).
      *
      * @var array<string, array{code?: string, politeness?: string}>
      */
@@ -44,6 +46,9 @@ class Settings extends Model
 
     /** Seconds to wait for one translation. */
     public int $timeout = 180;
+
+    /** "Send version information to Supertext" (SUPERTEXT_VERSION_REPORTS on the server wins). */
+    public bool $versionReports = true;
 
     public function getApiKey(): string
     {
@@ -59,16 +64,36 @@ class Settings extends Model
         return SupertextClient::baseUrlFor($this->environment, \is_string($custom) ? $custom : '');
     }
 
-    /** Supertext target code for a site: the override, else the site's language with a region ("de" → "de-DE"). */
-    public function targetCode(string $siteHandle, string $siteLanguage): string
+    /** The site's Supertext language as set in the settings ('' if none). */
+    public function languageCode(string $siteHandle): string
     {
-        return LanguageCodes::target($siteLanguage, (string) ($this->languages[$siteHandle]['code'] ?? ''));
+        return trim((string) ($this->languages[$siteHandle]['code'] ?? ''));
     }
 
-    /** Supertext source code for a site: the bare language of the override or the site's language ("en-GB" → "en"). */
+    /**
+     * Supertext target code for a site: its Supertext language, else the site's language if it is a Supertext code.
+     *
+     * @throws \supertext\crafttranslation\api\SupertextException reason unsupported_language
+     */
+    public function targetCode(string $siteHandle, string $siteLanguage): string
+    {
+        return Languages::target($siteLanguage, $this->languageCode($siteHandle));
+    }
+
+    /** Like targetCode(), but null for a site without a Supertext language (settings page). */
+    public function targetCodeOrNull(string $siteHandle, string $siteLanguage): ?string
+    {
+        return Languages::targetOrNull($siteLanguage, $this->languageCode($siteHandle));
+    }
+
+    /**
+     * Supertext source code for a site: the source form of its Supertext language or of the site's language ("en-US" → "en").
+     *
+     * @throws \supertext\crafttranslation\api\SupertextException reason unsupported_language
+     */
     public function sourceCode(string $siteHandle, string $siteLanguage): string
     {
-        return LanguageCodes::source($siteLanguage, (string) ($this->languages[$siteHandle]['code'] ?? ''));
+        return Languages::source($siteLanguage, $this->languageCode($siteHandle));
     }
 
     public function politeness(string $siteHandle): string
@@ -85,6 +110,7 @@ class Settings extends Model
             [['saveMode'], 'in', 'range' => [self::SAVE_DRAFT, self::SAVE_DIRECT]],
             [['timeout'], 'integer', 'min' => 10, 'max' => 1800],
             [['apiKey', 'apiUrl'], 'string'],
+            [['versionReports'], 'boolean'],
         ];
     }
 }
