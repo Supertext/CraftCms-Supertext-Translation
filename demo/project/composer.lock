@@ -4956,7 +4956,7 @@
             "dist": {
                 "type": "path",
                 "url": "../..",
-                "reference": "f6957752f32841ce0eae0e8d8bcc493e07ec0728"
+                "reference": "fe9a3b29de4a3b725caac0e6cdb2d12f6611fb97"
             },
             "require": {
                 "craftcms/cms": "^5.0",
@@ -4979,7 +4979,8 @@
             "autoload": {
                 "psr-4": {
                     "supertext\\crafttranslation\\": "src/",
-                    "supertext\\crafttranslation\\sdk\\": "lib/supertext-sdk/src/"
+                    "supertext\\crafttranslation\\sdk\\": "lib/supertext-sdk/src/",
+                    "supertext\\crafttranslation\\pluginhealth\\": "lib/supertext-plugin-health/src/"
                 }
             },
             "autoload-dev": {

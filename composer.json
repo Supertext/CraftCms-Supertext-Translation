@@ -22,7 +22,8 @@
   "autoload": {
     "psr-4": {
       "supertext\\crafttranslation\\": "src/",
-      "supertext\\crafttranslation\\sdk\\": "lib/supertext-sdk/src/"
+      "supertext\\crafttranslation\\sdk\\": "lib/supertext-sdk/src/",
+      "supertext\\crafttranslation\\pluginhealth\\": "lib/supertext-plugin-health/src/"
     }
   },
   "autoload-dev": {

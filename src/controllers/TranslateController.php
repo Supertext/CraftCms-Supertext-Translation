@@ -13,7 +13,7 @@ use craft\web\Controller;
 use supertext\crafttranslation\api\SupertextException;
 use supertext\crafttranslation\helpers\Messages;
 use supertext\crafttranslation\Plugin;
-use supertext\crafttranslation\sdk\V1\ApiKeyCheck;
+use supertext\crafttranslation\pluginhealth\KeyCheck;
 use yii\web\Response;
 
 /**
@@ -89,7 +89,7 @@ class TranslateController extends Controller
         $check = Plugin::getInstance()->getReporting()->testConnection();
 
         return $this->asJson([
-            'ok' => $check->status === ApiKeyCheck::OK,
+            'ok' => $check->status === KeyCheck::OK,
             'status' => $check->status,
             'message' => Messages::keyCheck($check),
             'checkedAt' => $check->checkedAt,

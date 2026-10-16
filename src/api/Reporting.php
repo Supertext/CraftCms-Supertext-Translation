@@ -8,16 +8,21 @@
 
 namespace supertext\crafttranslation\api;
 
-use supertext\crafttranslation\sdk\V1\ApiKeyCheck;
-use supertext\crafttranslation\sdk\V1\InstallationReporter;
-use supertext\crafttranslation\sdk\V1\PingResponse;
-use supertext\crafttranslation\sdk\V1\ReporterResult;
-use supertext\crafttranslation\sdk\V1\ReporterState;
+use supertext\crafttranslation\pluginhealth\CallableKeyChecker;
+use supertext\crafttranslation\pluginhealth\InstallationReporter;
+use supertext\crafttranslation\pluginhealth\KeyCheck;
+use supertext\crafttranslation\pluginhealth\PingResponse;
+use supertext\crafttranslation\pluginhealth\ReporterResult;
+use supertext\crafttranslation\pluginhealth\ReporterState;
+use supertext\crafttranslation\sdk\Supertext;
+use supertext\crafttranslation\sdk\V1\Client;
+use supertext\crafttranslation\sdk\V1\Protocol;
 
 /**
  * Version reports to the Supertext Commando Center, the automatic API key check and the ping
- * (Commando-Center-Supertext-Translation → docs/DEVELOPER.md → Report protocol). The protocol is the
- * SDK's InstallationReporter; this class only loads the reporter's state, runs one action, and stores
+ * (Commando-Center-Supertext-Translation → docs/DEVELOPER.md → Report protocol). The protocol is
+ * Supertext Plugin Health's InstallationReporter (lib/supertext-plugin-health) with the Supertext SDK's
+ * checkApiKey() as key checker; this class only loads the reporter's state, runs one action, and stores
  * the new state. Nothing here ever throws: reporting must never break a save or a translation.
  *
  * Has no Craft dependencies (services/Reporting gives it Craft's values and storage).
@@ -48,7 +53,7 @@ final class Reporting
      * @param callable(string, string, array<string, string>, ?string, float): array{status: int, body: string, headers?: array<string, string>} $transport
      * @param callable(): ?string    $load the stored state (JSON), null if none
      * @param callable(string): void $save stores the state (JSON)
-     * @param string|null $reportUrl     tests: the center's URL (default: SUPERTEXT_REPORT_URL, else the SDK's)
+     * @param string|null $reportUrl     tests: the center's URL (default: SUPERTEXT_REPORT_URL, else Plugin Health's)
      * @param (callable(): float)|null $now tests: wall-clock Unix seconds
      */
     public function __construct(
@@ -82,7 +87,7 @@ final class Reporting
         return !InstallationReporter::reportsEnabled(true) || InstallationReporter::reportsEnabled(false);
     }
 
-    /** The answer of the public ping endpoint (status, headers and body as the SDK returns them). */
+    /** The answer of the public ping endpoint (status, headers and body as Plugin Health returns them). */
     public static function ping(?string $challenge, bool $enabled): PingResponse
     {
         return InstallationReporter::pingResponse($challenge, self::PLUGIN_NAME, $enabled);
@@ -129,7 +134,7 @@ final class Reporting
     }
 
     /** The latest stored key check, for the settings page. */
-    public function lastCheck(): ?ApiKeyCheck
+    public function lastCheck(): ?KeyCheck
     {
         return $this->state()->keyCheck;
     }
@@ -142,12 +147,27 @@ final class Reporting
             pluginName: self::PLUGIN_NAME,
             pluginVersion: $this->pluginVersion,
             systemName: self::SYSTEM_NAME,
+            keyChecker: $this->keyChecker(),
             systemVersion: $this->systemVersion,
+            sdkVersion: Supertext::SDK_VERSION,
             callbackUrl: $this->callbackUrl,
             reportUrl: $this->reportUrl,
-            transport: new CallableTransport($this->transport),
-            apiBaseUrl: $this->apiBaseUrl,
+            transport: new ReportTransport($this->transport),
             now: $this->now,
+        );
+    }
+
+    /** The SDK's key check (GET features) against the configured API, through the plugin's transport. */
+    private function keyChecker(): CallableKeyChecker
+    {
+        $baseUrl = $this->apiBaseUrl;
+        $userAgent = self::PLUGIN_NAME . '/' . $this->pluginVersion;
+        $transport = new CallableTransport($this->transport);
+        $now = $this->now;
+
+        return new CallableKeyChecker(
+            static fn (string $key) => (new Client($key, $baseUrl, userAgent: $userAgent, transport: $transport, now: $now))->checkApiKey(),
+            [Protocol::class, 'apiKeyFingerprint'],
         );
     }
 

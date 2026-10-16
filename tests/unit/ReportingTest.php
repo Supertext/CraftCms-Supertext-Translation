@@ -4,6 +4,7 @@ namespace supertext\crafttranslation\tests\unit;
 
 use PHPUnit\Framework\TestCase;
 use supertext\crafttranslation\api\Reporting;
+use supertext\crafttranslation\sdk\Supertext;
 
 /** The plugin's Commando Center glue: state kept between calls, which action reports what, ping answers, never throwing. */
 final class ReportingTest extends TestCase
@@ -78,12 +79,14 @@ final class ReportingTest extends TestCase
         self::assertSame(['name' => 'CraftCms-Supertext-Translation', 'version' => '1.2.0'], $report['plugin']);
         self::assertSame(['name' => 'Craft CMS', 'version' => '5.11.5'], $report['system']);
         self::assertSame('PHP', $report['runtime']['name']);
+        self::assertSame(Supertext::SDK_VERSION, $report['sdk_version'], 'the bundled SDK');
+        self::assertSame('https://api.test/v1/features', $this->calls[0]['url'], 'the key check uses the configured API');
         self::assertTrue($report['api_key_configured']);
         self::assertSame('ok', $report['api_key_check']['status']);
         self::assertSame('https://craft.example.ch/actions/supertext-translation/ping', $report['callback']['url']);
         self::assertSame(3.0, $this->calls[1]['timeout'], 'reports wait at most 3 seconds');
 
-        // The state is stored as the SDK's JSON; the key itself never is, nor is it sent to the center.
+        // The state is stored as Plugin Health's JSON (the same the SDK 0.2 reporter stored); the key itself never is, nor is it sent to the center.
         self::assertStringNotContainsString(self::KEY, (string) $this->stored);
         foreach ($this->calls as $call) {
             if ($call['url'] === self::CENTER) {
@@ -203,5 +206,17 @@ final class ReportingTest extends TestCase
         } finally {
             putenv($old === false ? 'SUPERTEXT_VERSION_REPORTS' : 'SUPERTEXT_VERSION_REPORTS=' . $old);
         }
+    }
+
+    public function testAStateStoredByTheSdk02ReporterIsKept(): void
+    {
+        $reporting = $this->reporting();
+        $versions = $reporting->reporter()->versions();
+        $this->stored = '{"reportedVersions":"' . $versions . '","reportedKeyStatus":"ok","lastFailureAt":null,"keyCheck":{"status":"ok","checkedAt":"2026-10-01T08:00:00Z","httpStatus":200,"errorCode":null,"fingerprint":"' . hash('sha256', self::KEY) . '"}}';
+        $before = $this->stored;
+
+        self::assertNull($reporting->onRequest(self::KEY)?->event, 'no new installed report after the update');
+        self::assertSame([], $this->calls);
+        self::assertSame($before, $this->stored, 'stored in the same format');
     }
 }

@@ -11,6 +11,7 @@
 
 ### Changed
 - All Supertext API calls now go through the official Supertext PHP SDK (0.2.1), bundled with the plugin (nothing extra to install).
+- Version reports, the API key check result and the reachability ping now use [Supertext Plugin Health](https://github.com/Supertext/Commando-Center-Supertext-Translation/tree/main/plugin-health) 0.1.0 (bundled in `lib/supertext-plugin-health`); Supertext SDK updated to 0.3.0. No change for sites: settings and stored state stay as they are.
 - **Languages are no longer guessed.** Each site's *Supertext language* is chosen from Supertext's own language list in the plugin settings; sites whose language is a Supertext code (`de-CH`, `fr-CH`, `es`, `zh-Hans`, apart from case and `_`/`-`) are pre-filled. Every other site needs a choice: a site in `de` needs German (Germany), (Switzerland) or (Austria). Sites without one are marked *Not mapped* and get the message *The language … has no Supertext language yet* (nothing is sent for them; the other sites are translated). The source language is sent without region, from the same setting. Older default regions were wrong for most languages (Supertext wants `es`, `sl`, `nl` without region, `zh-Hans` instead of `zh-CN`).
 - *Form of address* warns for languages where Supertext offers no formal/informal choice (English, Swiss German, Romansh, Albanian, Serbian), and such a translation gets its own message.
 - *Test connection* shows the API key check's result instead of "Connected".

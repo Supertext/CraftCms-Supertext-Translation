@@ -23,7 +23,7 @@ use supertext\crafttranslation\api\Reporting as ApiReporting;
 use supertext\crafttranslation\elements\actions\TranslateWithSupertext;
 use supertext\crafttranslation\helpers\Messages;
 use supertext\crafttranslation\models\Settings;
-use supertext\crafttranslation\sdk\V1\ApiKeyCheck;
+use supertext\crafttranslation\pluginhealth\KeyCheck;
 use supertext\crafttranslation\services\Reporting;
 use supertext\crafttranslation\services\Translator;
 use supertext\crafttranslation\web\assets\translate\TranslateAsset;
@@ -114,7 +114,7 @@ class Plugin extends BasePlugin
             if ($check !== null && !$request->getIsConsoleRequest() && $request->getIsCpRequest()) {
                 $session = Craft::$app->getSession();
                 $text = strip_tags(Messages::keyCheck($check));
-                if ($check->status === ApiKeyCheck::OK) {
+                if ($check->status === KeyCheck::OK) {
                     $session->setNotice($text);
                 } else {
                     $session->setError($text);

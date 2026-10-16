@@ -80,7 +80,7 @@ AI file translation API v1, same as the WordPress plugin: POST HTML file → pol
 
 Lessons from the live API, apply them here: header `Authorization: Supertext-Auth-Key <key>` (strip a pasted prefix), retry HTTP 429 (per-second rate limit), and keep a whole text in one `data-st-id` element (each one is translated on its own). **Languages:** only the codes Supertext's `GET features` lists (the SDK's `Languages`, `supertext\crafttranslation\sdk\V1`): bare sources (`en`); targets regional only for de/en/fr/it/pt (`de-CH`, `en-US`), `zh-Hans`/`zh-Hant`, `sr-Latn`/`sr-Cyrl`, `gsw-u-sd-chzh`/`chbe`, bare for the rest (`es`, `nl`, `sl`). **No guessing:** the site's *Supertext language* setting, else an exact match, else the error `unsupported_language`. No default regions; see `docs/DEVELOPER.md` → *Language codes*.
 
-**Commando Center:** version reports, the automatic API key check and the public ping go through the SDK's `InstallationReporter` (`src/api/Reporting.php`, `src/services/Reporting.php`, state in the table `supertext_state`); see `docs/DEVELOPER.md` → *Commando Center*. Reporting must never break a save or a translation.
+**Commando Center:** version reports, the automatic API key check and the public ping go through Supertext Plugin Health's `InstallationReporter` with the SDK's `checkApiKey()` (`src/api/Reporting.php`, `src/services/Reporting.php`, state in the table `supertext_state`); see `docs/DEVELOPER.md` → *Commando Center*. Reporting must never break a save or a translation.
 
 ## This repo
 
@@ -90,6 +90,7 @@ Lessons from the live API, apply them here: header `Authorization: Supertext-Aut
 - Field rules live in `src/services/Translator.php` (`collectUnits`, `kindOf`); keep "Field rules" in `docs/DEVELOPER.md` and "What is translated" in `docs/USER_GUIDE.md` in sync.
 - Keep `src/api/` free of Craft classes (unit tests run without Craft).
 - All Supertext API calls go through the Supertext PHP SDK, shipped in `lib/supertext-sdk` with its namespace changed to `supertext\crafttranslation\sdk` and wrapped by `src/api/SupertextClient.php`. Never edit `lib/supertext-sdk`: fix the SDK in `Supertext/Supertext-API-SDK-and-Guide` and run `scripts/vendor-sdk.sh`. Every SDK error code needs a reason in `SupertextClient::REASONS`, a `Messages::of()` arm and strings in `de`, `fr` and `it`.
+- Version reports, the key check result and the ping answer come from Supertext Plugin Health, shipped in `lib/supertext-plugin-health` with its namespace changed to `supertext\crafttranslation\pluginhealth`. Never edit `lib/supertext-plugin-health`: fix it in `Supertext/Commando-Center-Supertext-Translation` (`plugin-health/`) and run `scripts/vendor-plugin-health.sh <tag>`.
 - Strings used by the edit-page JavaScript must be listed in `TranslateAsset::MESSAGES`.
 - The plugin handle `supertext-translation` and the permission `supertext-translation:translate` are stored in users' projects; renaming them is a breaking change.
 - `demo/` is the Railway demo (`railway.json` → `demo/Dockerfile`, context = repo root). Demo-only setup lives in `demo/project/modules/supertextdemo`; it only creates what's missing, so changes to the demo's data model need a fresh database or an explicit step there. Demo secrets live only in Railway variables.

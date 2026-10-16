@@ -10,7 +10,7 @@ namespace supertext\crafttranslation\helpers;
 
 use Craft;
 use supertext\crafttranslation\api\SupertextException;
-use supertext\crafttranslation\sdk\V1\ApiKeyCheck;
+use supertext\crafttranslation\pluginhealth\KeyCheck;
 
 /** Shows errors from the API client (which only speaks English) in the user's control panel language. */
 final class Messages
@@ -57,7 +57,7 @@ final class Messages
      * The automatic API key check's result (texts from the Commando Center's guide), as HTML: for
      * "invalid" and "missing" with the links to create an account and generate a key (new tab).
      */
-    public static function keyCheck(ApiKeyCheck $check): string
+    public static function keyCheck(KeyCheck $check): string
     {
         $links = [
             'signupUrl' => self::SIGNUP_URL,
@@ -66,10 +66,10 @@ final class Messages
         ];
 
         return match ($check->status) {
-            ApiKeyCheck::OK => Craft::t('supertext-translation', 'API key checked: the connection to Supertext works.'),
-            ApiKeyCheck::INVALID => Craft::t('supertext-translation', 'Supertext rejected the API key. Check that you copied the whole key, or generate a new one at <a href="{apiKeyUrl}" target="_blank" rel="noopener">supertext.com → Integrations → API</a> (requires the Admin role). No Supertext account yet? Create one at <a href="{signupUrl}" target="_blank" rel="noopener">supertext.com</a>.', $links),
-            ApiKeyCheck::MISSING => Craft::t('supertext-translation', 'No API key is set yet. No Supertext account yet? Create one at <a href="{signupUrl}" target="_blank" rel="noopener">supertext.com</a>. Generate your API key at <a href="{apiKeyUrl}" target="_blank" rel="noopener">supertext.com → Integrations → API</a> (requires the Admin role).', $links),
-            ApiKeyCheck::UNREACHABLE => Craft::t('supertext-translation', 'The API key couldn\'t be checked because Supertext can\'t be reached. The settings are saved; check again later.'),
+            KeyCheck::OK => Craft::t('supertext-translation', 'API key checked: the connection to Supertext works.'),
+            KeyCheck::INVALID => Craft::t('supertext-translation', 'Supertext rejected the API key. Check that you copied the whole key, or generate a new one at <a href="{apiKeyUrl}" target="_blank" rel="noopener">supertext.com → Integrations → API</a> (requires the Admin role). No Supertext account yet? Create one at <a href="{signupUrl}" target="_blank" rel="noopener">supertext.com</a>.', $links),
+            KeyCheck::MISSING => Craft::t('supertext-translation', 'No API key is set yet. No Supertext account yet? Create one at <a href="{signupUrl}" target="_blank" rel="noopener">supertext.com</a>. Generate your API key at <a href="{apiKeyUrl}" target="_blank" rel="noopener">supertext.com → Integrations → API</a> (requires the Admin role).', $links),
+            KeyCheck::UNREACHABLE => Craft::t('supertext-translation', 'The API key couldn\'t be checked because Supertext can\'t be reached. The settings are saved; check again later.'),
             default => Craft::t('supertext-translation', 'The API key couldn\'t be checked: Supertext answered with an error ({status}). The settings are saved; check again later.', $links),
         };
     }

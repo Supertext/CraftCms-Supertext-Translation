@@ -13,7 +13,7 @@ use craft\console\Controller;
 use craft\helpers\Console;
 use supertext\crafttranslation\helpers\Messages;
 use supertext\crafttranslation\Plugin;
-use supertext\crafttranslation\sdk\V1\ApiKeyCheck;
+use supertext\crafttranslation\pluginhealth\KeyCheck;
 use supertext\crafttranslation\services\Translator;
 use yii\console\ExitCode;
 
@@ -96,10 +96,10 @@ class TranslateController extends Controller
         $result = $reporting->check();
         $check = $result['check'];
         $text = strip_tags(Messages::keyCheck($check));
-        if (\in_array($check->status, [ApiKeyCheck::INVALID, ApiKeyCheck::MISSING], true)) {
+        if (\in_array($check->status, [KeyCheck::INVALID, KeyCheck::MISSING], true)) {
             $text .= ' (' . Messages::SIGNUP_URL . ', ' . Messages::API_KEY_URL . ')';
         }
-        $ok = $check->status === ApiKeyCheck::OK;
+        $ok = $check->status === KeyCheck::OK;
         $this->stdout('Supertext Translation ' . $plugin->getVersion() . ', API ' . $plugin->getSettings()->getBaseUrl() . "\n");
         $this->stdout($text . "\n", $ok ? Console::FG_GREEN : Console::FG_RED);
         $this->stdout('Version report to Supertext: ' . match (true) {

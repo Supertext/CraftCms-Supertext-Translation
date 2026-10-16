@@ -14,8 +14,8 @@ use craft\db\Query;
 use craft\helpers\Db;
 use supertext\crafttranslation\api\Reporting as ApiReporting;
 use supertext\crafttranslation\Plugin;
-use supertext\crafttranslation\sdk\V1\ApiKeyCheck;
-use supertext\crafttranslation\sdk\V1\ReporterResult;
+use supertext\crafttranslation\pluginhealth\KeyCheck;
+use supertext\crafttranslation\pluginhealth\ReporterResult;
 use yii\web\Response as YiiResponse;
 
 /**
@@ -40,7 +40,7 @@ class Reporting extends Component
     /** @var (callable(string, string, array<string, string>, ?string, float): array{status: int, body: string, headers: array<string, string>})|null Tests only. */
     public $transport = null;
 
-    /** Tests only: the center's URL (default SUPERTEXT_REPORT_URL, else the SDK's). */
+    /** Tests only: the center's URL (default SUPERTEXT_REPORT_URL, else Plugin Health's). */
     public ?string $reportUrl = null;
 
     /** @var (\Closure(): ?ReporterResult)|null the action that runs after this web request */
@@ -73,7 +73,7 @@ class Reporting extends Component
     }
 
     /** *Test connection*: the key check (and a report if its status changed). */
-    public function testConnection(): ApiKeyCheck
+    public function testConnection(): KeyCheck
     {
         $result = $this->reporting()->testConnection($this->apiKey());
 
@@ -83,7 +83,7 @@ class Reporting extends Component
     /**
      * `translate/check`: the key check, then a `check` report unless the key check already sent one.
      *
-     * @return array{check: ApiKeyCheck, event: ?string, sent: bool}
+     * @return array{check: KeyCheck, event: ?string, sent: bool}
      */
     public function check(): array
     {
@@ -97,7 +97,7 @@ class Reporting extends Component
         return ['check' => $check, 'event' => $result?->event, 'sent' => (bool) $result?->sent];
     }
 
-    public function lastCheck(): ?ApiKeyCheck
+    public function lastCheck(): ?KeyCheck
     {
         return $this->reporting()->lastCheck();
     }
@@ -164,10 +164,10 @@ class Reporting extends Component
         Db::upsert(self::STATE_TABLE, ['name' => self::STATE_NAME, 'value' => $json]);
     }
 
-    /** Only if the SDK failed unexpectedly (it never throws). */
-    private static function failedCheck(): ApiKeyCheck
+    /** Only if Plugin Health failed unexpectedly (it never throws). */
+    private static function failedCheck(): KeyCheck
     {
-        return new ApiKeyCheck(ApiKeyCheck::ERROR, ApiKeyCheck::timestamp(microtime(true)));
+        return new KeyCheck(KeyCheck::ERROR, KeyCheck::timestamp(microtime(true)));
     }
 
     private function apiKey(): string
