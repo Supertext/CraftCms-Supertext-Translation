@@ -183,7 +183,7 @@ final class Languages
             return $target['name'];
         }
         $name = \Locale::getDisplayName(str_replace('-', '_', $target['code']), str_replace('-', '_', $locale));
-        if (!\is_string($name) || $name === '' || strcasecmp($name, $target['code']) === 0 || strcasecmp($name, str_replace('-', '_', $target['code'])) === 0) {
+        if (!\is_string($name) || strcasecmp($name, $target['code']) === 0 || strcasecmp($name, str_replace('-', '_', $target['code'])) === 0) {
             return $target['name'];
         }
 
