@@ -46,7 +46,7 @@ class Plugin extends BasePlugin
 {
     public const PERMISSION = 'supertext-translation:translate';
 
-    public string $schemaVersion = '1.1.0';
+    public string $schemaVersion = '1.2.0';
     public bool $hasCpSettings = true;
 
     public static function config(): array
@@ -138,8 +138,11 @@ class Plugin extends BasePlugin
         $languages = [];
         foreach (Craft::$app->getSites()->getAllSites() as $site) {
             $target = $settings->targetCodeOrNull($site->handle, $site->language);
+            $configured = Settings::configuredLanguageCode($site->handle);
             $languages[$site->handle] = [
-                'code' => $settings->languageCode($site->handle) ?: (string) Languages::match($site->language),
+                // The select shows the saved choice, else the suggestion (exact match or the SDK's default), else "— choose —".
+                'code' => $settings->languageCode($site->handle) ?: (string) Languages::suggest($site->language),
+                'configured' => $configured !== '',
                 'target' => $target,
                 'politenessSupported' => $target !== null ? Languages::supportsPoliteness($target) : null,
             ];
@@ -150,7 +153,7 @@ class Plugin extends BasePlugin
             'settings' => $settings,
             'sites' => Craft::$app->getSites()->getAllSites(),
             'languages' => $languages,
-            'targets' => Languages::targets(),
+            'targets' => Languages::options(Craft::$app->language),
             'check' => $check,
             'checkText' => $check !== null ? Messages::keyCheck($check) : null,
             'reportsEnabled' => $reporting->enabled(),

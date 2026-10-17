@@ -64,8 +64,34 @@ The plugin translates into the **language of each site**. Set the languages in *
 
 In the plugin settings, the **Languages** table lists every site. Per site you set:
 
-- **Supertext language**: the language Supertext translates into (and from, when the site is the source). Choose it from Supertext's own list. Sites whose language **is** a Supertext code (apart from upper/lower case and `_`/`-`) are pre-filled, e.g. `de-CH`, `fr-CH`, `es`. Every other site needs a choice: the plugin never guesses a region, so a site in `de` needs *German (Germany)* `de-DE`, *German (Switzerland)* `de-CH` or *German (Austria)* `de-AT`. A site without one is marked *Not mapped*: it isn't translated (editors see *The language … has no Supertext language yet*), the other sites are.
-- **Form of address**: *Formal* (Sie, vous), *Informal* (du, tu) or *Default*. Supertext doesn't offer a choice for English, Swiss German, Romansh, Albanian and Serbian; the table warns when one is set for those (leave them on *Default*).
+- **Supertext language**: a select with Supertext's own list (each language's name in your control panel language and its code, e.g. *Deutsch (Schweiz) (de-CH)*): the language Supertext translates into, and from when the site is the source. You never type a code. Until you save a choice, the select shows a suggestion:
+  - the site's language itself when it **is** a Supertext code (apart from upper/lower case and `_`/`-`), e.g. `de-CH`, `fr_ch` → `fr-CH`, `es`;
+  - else its usual variant (the defaults below), e.g. a site in `de` → *German (Germany)* `de-DE`; choose *German (Switzerland)* `de-CH` or *German (Austria)* `de-AT` if that's what the site is;
+  - else *— choose —*, marked *Not mapped*: the site's language has no obvious Supertext language (e.g. `en-IE`, `de-LI`, `fr-BE`, `gsw`, `sr-RS`). It isn't translated until you choose one (editors see *The language … has no Supertext language yet*); the other sites are.
+
+  A site you haven't saved a choice for is translated with the same suggestion, so saving the page only makes it explicit. Saving checks every value against Supertext's list.
+- **Form of address**: *Formal* (Sie, vous), *Informal* (du, tu) or *Default*. Shown only for Supertext languages that offer the choice; English, Swiss German, Romansh, Albanian and Serbian show *Not offered for this language* (always *Default*).
+
+Defaults for a site language that isn't a Supertext code itself (the Supertext SDK's, the same in every Supertext plugin):
+
+| Site language | Supertext language |
+| --- | --- |
+| `de`, `en`, `fr`, `it`, `pt` | `de-DE`, `en-US`, `fr-FR`, `it-IT`, `pt-PT` |
+| `zh`, `zh-CN`, `zh-SG` / `zh-TW`, `zh-HK`, `zh-MO` | `zh-Hans` / `zh-Hant` |
+| `sr`, `sr-Latn-RS` / `sr-Cyrl-RS` | `sr-Latn` / `sr-Cyrl` |
+| A region of a language Supertext offers without region | the bare code: `es-ES`, `es-419` → `es`, `nl-NL` → `nl`, `nb-NO` → `nb` |
+| Anything else (`en-IE`, `de-LI`, `fr-BE`, `gsw`, `sr-RS`, `no`) | none: choose one |
+
+**Override from a config file:** `config/supertext-translation.php` can set the Supertext language (and form of address) per site handle, e.g. for automated setups; it wins over the settings page, where that site's select is then disabled with the note *Set in config/supertext-translation.php*:
+
+```php
+<?php
+return [
+    'languages' => [
+        'german' => ['code' => 'de-CH', 'politeness' => 'more'],
+    ],
+];
+```
 
 Supertext accepts exactly these codes (its `features` list, October 2026). The source language is always sent without region (`en-US` → `en`), from the same setting.
 
@@ -76,7 +102,7 @@ Supertext accepts exactly these codes (its `features` list, October 2026). The s
 | Swiss German | `gsw-u-sd-chzh` (Zurich), `gsw-u-sd-chbe` (Bern) |
 | All others, without region | `bg`, `cs`, `da`, `el`, `es`, `fi`, `hr`, `hu`, `ja`, `ko`, `nb`, `nl`, `pl`, `rm`, `ru`, `sk`, `sl`, `sq`, `sv`, `tr` |
 
-A code that a site already had in an older version of the plugin and that isn't in this list stays selectable and is sent as it is.
+**Updating from an older version:** `php craft up` converts the Supertext languages saved by older versions (which could hold other spellings) to the list's: `de_ch` → `de-CH`, `de` → `de-DE`, `es-ES` → `es`. A value that is no Supertext language (e.g. `xx-YY`) is removed, logged as a warning, and the site shows its select again (with the suggestion or *— choose —*).
 
 ![The Languages table: per site the language, its Supertext language chosen from Supertext's list and the form of address](images/07-settings-languages.png)
 
@@ -103,7 +129,7 @@ All settings are in *Settings → Plugins → Supertext Translation* and stored 
 | API key | `$SUPERTEXT_API_KEY` | The key or an environment variable reference. Required. |
 | Supertext API | Live | *Live* (`https://api.supertext.com/v1/`), *Staging* or *Testing*. |
 | Custom API address | – | A different base URL (proxy, test server); may be an environment variable such as `$SUPERTEXT_API_URL`. Overrides *Supertext API*. |
-| Languages | – | Per site: Supertext language (from Supertext's list; pre-filled when the site's language is a Supertext code, otherwise required for the site to be translated) and form of address. See [Languages](#languages). |
+| Languages | the suggestion | Per site: Supertext language (a select of Supertext's list; preselected with the site's language or its default, `de` → `de-DE`; *— choose —* where there is none) and form of address (only where Supertext offers it). `config/supertext-translation.php` → `languages` overrides it. See [Languages](#languages). |
 | Timeout | 180 | Seconds to wait for the translation of one site. |
 | Send version information to Supertext | On | See [Version information and the API key check](#version-information-and-the-api-key-check). The environment variable `SUPERTEXT_VERSION_REPORTS=0` (or `false`, `off`, `no`) on the server turns it off regardless of the setting (`1` turns it on). |
 
@@ -143,11 +169,12 @@ The entry index action *Translate with Supertext* translates in Craft's queue. C
 | *Authentication failed. Please check the Supertext API key.* | Wrong or revoked key, or a key for another environment (*Live* vs *Staging*). Use *Test connection*. |
 | *Supertext rejected the API key* (API key check) | The key is wrong or revoked. Check that the whole key is in `SUPERTEXT_API_KEY`, or generate a new one at [supertext.com → Integrations → API](https://www.supertext.com/en/integrations/api) (Admin role required). No Supertext account yet? [Create one](https://www.supertext.com/person/en/account/signin). Then *Test connection*. |
 | *The API key couldn't be checked because Supertext can't be reached* | The Craft server can't reach `api.supertext.com` (firewall, proxy, DNS). Translations need the same connection. |
-| *The language … has no Supertext language yet* / *Not mapped* in the Languages table | The site's language isn't a Supertext code (e.g. `de`, `zh-CN`). Choose its *Supertext language* in the plugin settings (see [Languages](#languages)). |
-| *Supertext offers no formal or informal tone for this language* | *Form of address* is *Formal* or *Informal* for a language without that choice (English, Swiss German, Romansh, Albanian, Serbian). Set it to *Default*. |
+| *The language … has no Supertext language yet* / *Not mapped* in the Languages table | The site's language is no Supertext code and has no default (e.g. `en-IE`, `de-LI`, `gsw`). Choose its *Supertext language* under *Settings → Plugins → Supertext Translation → Languages* (see [Languages](#languages)). |
+| *Supertext offers no formal or informal tone for this language* | *Form of address* is *Formal* or *Informal* for a language without that choice (English, Swiss German, Romansh, Albanian, Serbian), saved by an older version or set in `config/supertext-translation.php`. Save the settings page once (it resets the hidden choice to *Default*) or fix the config file. |
 | *You are not allowed to edit the entry in this site.* | The editor lacks *Edit* permission for that site or the section's save permissions. |
 | *The entry is not available in this site.* | The section doesn't propagate the entry to that site. Enable the site in the entry's *Status* panel or change the section's propagation. |
-| *Supertext does not support this language pair (en → xx-YY)* | A *Supertext language* Supertext doesn't offer (e.g. a code kept from an older plugin version such as `es-ES` instead of `es`), or the same language as the source. Choose one from the list; the message shows the codes that were sent. |
+| *Supertext does not support this language pair (en → xx-YY)* | A code from `config/supertext-translation.php` that Supertext doesn't offer, or the same language as the source. Use a code from the list; the message shows the codes that were sent. |
+| *Choose the Supertext language of site … from the list* when saving | A value that isn't one of Supertext's codes was posted. Choose one from the select. |
 | *Too many requests to Supertext* | The API's per-second limit was hit repeatedly although the plugin retries. Try again shortly. |
 | *Your Supertext translation limit is exceeded.* | The Supertext subscription's quota is used up. |
 | *Timed out waiting for the Supertext translation* | Very long content. Raise *Timeout* (and PHP's `max_execution_time`). |

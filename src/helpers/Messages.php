@@ -41,7 +41,7 @@ final class Messages
             'rate_limited' => Craft::t('supertext-translation', 'Too many requests to Supertext. Please try again shortly.'),
             'unavailable' => Craft::t('supertext-translation', 'The Supertext service is currently unavailable.'),
             'http_error' => Craft::t('supertext-translation', 'Supertext answered with HTTP {0}.', $params),
-            'unsupported_language' => Craft::t('supertext-translation', 'The language {0} has no Supertext language yet. Ask your administrator to choose its Supertext language in the plugin settings (Languages).', $params),
+            'unsupported_language' => Craft::t('supertext-translation', 'The language {0} has no Supertext language yet. Ask your administrator to choose it under Settings → Plugins → Supertext Translation → Languages (Supertext language).', $params),
             'unsupported_feature' => Craft::t('supertext-translation', 'Supertext offers no formal or informal tone for this language. Set its form of address to Default in the plugin settings (Languages).'),
             default => null,
         };

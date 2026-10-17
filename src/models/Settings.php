@@ -36,11 +36,13 @@ class Settings extends Model
     public string $saveMode = self::SAVE_DRAFT;
 
     /**
-     * Per site handle: Supertext language code and tone. Without a code, the site's language is used if it
-     * is a Supertext code itself (apart from case and "_"/"-"); otherwise the site has no Supertext language
-     * and isn't translated (no default regions, see api/Languages).
+     * Per site handle: Supertext language code (chosen in a select of Supertext's targets) and tone. Without a
+     * code, the site's language is used if it is a Supertext code itself (apart from case and "_"/"-"), else
+     * the SDK's default ("de" → "de-DE"); a site language with neither isn't translated (see api/Languages).
+     * `config/supertext-translation.php` can set them too and then wins (see configuredLanguageCode()).
      *
-     * @var array<string, array{code?: string, politeness?: string}>
+     * @var array<array-key, mixed> site handle → ['code' => string, 'politeness' => 'default'|'more'|'less'], as posted
+     *      (validateLanguages() checks it)
      */
     public array $languages = [];
 
@@ -64,10 +66,31 @@ class Settings extends Model
         return SupertextClient::baseUrlFor($this->environment, \is_string($custom) ? $custom : '');
     }
 
-    /** The site's Supertext language as set in the settings ('' if none). */
+    /**
+     * The site's Supertext language from `config/supertext-translation.php` ('' if the file doesn't set one).
+     * Craft merges that file over the stored settings, so this value is the one that is used.
+     */
+    public static function configuredLanguageCode(string $siteHandle): string
+    {
+        try {
+            $config = \Craft::$app->getConfig()->getConfigFromFile('supertext-translation');
+        } catch (\Throwable) {
+            return '';
+        }
+        $code = $config['languages'][$siteHandle]['code'] ?? '';
+
+        return \is_string($code) ? trim($code) : '';
+    }
+
+    /**
+     * The site's Supertext language as set in the settings ('' if none), in the list's spelling ("de_ch" from a
+     * config file → "de-CH"); a code the list doesn't know is returned as it is (and sent as it is).
+     */
     public function languageCode(string $siteHandle): string
     {
-        return trim((string) ($this->languages[$siteHandle]['code'] ?? ''));
+        $code = trim((string) ($this->languages[$siteHandle]['code'] ?? ''));
+
+        return Languages::canonical($code) ?? $code;
     }
 
     /**
@@ -111,6 +134,25 @@ class Settings extends Model
             [['timeout'], 'integer', 'min' => 10, 'max' => 1800],
             [['apiKey', 'apiUrl'], 'string'],
             [['versionReports'], 'boolean'],
+            [['languages'], 'validateLanguages'],
         ];
+    }
+
+    /** Every Supertext language must be one of Supertext's target codes (the select's options), the tone default/more/less. */
+    public function validateLanguages(string $attribute): void
+    {
+        foreach ($this->languages as $handle => $config) {
+            if (!\is_array($config)) {
+                $this->addError($attribute, \Craft::t('supertext-translation', 'Choose the Supertext language of site {site} from the list.', ['site' => (string) $handle]));
+                continue;
+            }
+            $code = trim((string) ($config['code'] ?? ''));
+            if ($code !== '' && !Languages::isTarget($code) && $code !== self::configuredLanguageCode((string) $handle)) {
+                $this->addError($attribute, \Craft::t('supertext-translation', 'Choose the Supertext language of site {site} from the list.', ['site' => (string) $handle]));
+            }
+            if (!\in_array((string) ($config['politeness'] ?? 'default'), ['default', 'more', 'less'], true)) {
+                $this->addError($attribute, \Craft::t('supertext-translation', 'Choose the form of address of site {site} from the list.', ['site' => (string) $handle]));
+            }
+        }
     }
 }

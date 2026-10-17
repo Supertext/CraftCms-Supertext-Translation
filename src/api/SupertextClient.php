@@ -53,7 +53,7 @@ final class SupertextClient
         SdkException::FILE_DELETED => ['deleted', 'The document was deleted at Supertext before it could be downloaded.'],
         SdkException::TIMEOUT => ['timeout', 'Timed out waiting for the Supertext translation.'],
         SdkException::INCOMPLETE_RESPONSE => ['empty', 'The translated document was empty.'],
-        SdkException::UNSUPPORTED_LANGUAGE => ['unsupported_language', 'The language %s has no Supertext language yet. Ask your administrator to choose its Supertext language in the plugin settings (Languages).'],
+        SdkException::UNSUPPORTED_LANGUAGE => ['unsupported_language', 'The language %s has no Supertext language yet. Ask your administrator to choose it under Settings → Plugins → Supertext Translation → Languages (Supertext language).'],
         SdkException::UNSUPPORTED_FEATURE => ['unsupported_feature', 'Supertext offers no formal or informal tone for this language. Set its form of address to Default in the plugin settings (Languages).'],
     ];
 
