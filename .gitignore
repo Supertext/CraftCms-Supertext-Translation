@@ -9,3 +9,6 @@ node_modules/
 /demo/project/config/project/
 .env
 /.phpstan-cache/
+/tests/e2e/node_modules/
+/tests/e2e/artifacts/
+/tests/docs/stand-in.log
