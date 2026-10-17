@@ -99,6 +99,13 @@ const browser = await chromium.launch({ executablePath: process.env.CHROMIUM_PAT
 const page = await browser.newPage({ viewport: { width: 1280, height: 1000 }, locale: 'en-US' });
 page.setDefaultTimeout(30_000);
 
+/** Ticks a Craft checkbox (the label draws the box and takes the click, as for a person). */
+async function tick(box, id) {
+	const input = box.locator(`#${id}`);
+	if (!(await input.isChecked())) await box.locator(`label[for="${id}"]`).click();
+	return input.isChecked();
+}
+
 /** Translates the article into every target site with the Supertext box on its edit page. */
 async function translateArticle(label, overwrite) {
 	await page.goto(`${B}/admin/content/entries/articles/${article.id}?site=${sourceSite.handle}`);
@@ -110,13 +117,13 @@ async function translateArticle(label, overwrite) {
 		return;
 	}
 	for (const site of targets) {
-		const input = box.locator(`#st-site-${site.id}`);
-		if (check(`${label}: ${site.language} can be chosen`, (await input.count()) === 1)) await input.check();
+		const exists = (await box.locator(`#st-site-${site.id}`).count()) === 1;
+		check(`${label}: ${site.language} can be chosen`, exists && (await tick(box, `st-site-${site.id}`)));
 	}
 	const warning = box.locator('.st-warning');
 	if (overwrite) {
 		check(`${label}: overwrite warning shown for translated sites`, await warning.isVisible());
-		await box.locator('#st-overwrite').check();
+		check(`${label}: "Overwrite existing translations" ticked`, await tick(box, 'st-overwrite'));
 	} else {
 		check(`${label}: no overwrite warning before the first translation`, !(await warning.isVisible()));
 	}
