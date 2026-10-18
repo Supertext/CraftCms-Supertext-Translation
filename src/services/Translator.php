@@ -131,8 +131,9 @@ class Translator extends Component
                     continue;
                 }
 
+                // Sites with *Translation review* on go through the review service (same key and protocol).
                 $translated = $this->translateUnits(
-                    $client,
+                    $client->forReview($settings->review($site->handle)),
                     $units,
                     $sourceSite ? $settings->sourceCode($sourceSite->handle, $sourceSite->language) : '',
                     $settings->targetCode($site->handle, $site->language),
@@ -306,6 +307,8 @@ class Translator extends Component
             $settings->getBaseUrl(),
             $this->transport ?? self::guzzleTransport(),
             $settings->timeout,
+            reviewUrl: $settings->getReviewUrl(),
+            pluginVersion: Plugin::getInstance()->getVersion(),
         );
     }
 

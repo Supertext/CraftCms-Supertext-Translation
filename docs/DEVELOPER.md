@@ -38,7 +38,7 @@ apply(): set the values on the entry (and nested entries) in the target site, sa
 | `src/services/Reporting.php` | Commando Center on Craft: site URL, versions, when the reporter runs, its state in the table `supertext_state` |
 | `src/elements/actions/TranslateWithSupertext.php`, `src/jobs/TranslateEntryJob.php` | Bulk translation in the queue (missing sites only) |
 | `src/console/controllers/TranslateController.php` | `php craft supertext-translation/translate <entryId> [--from=en] [--to=de,fr] [--overwrite]`, `php craft supertext-translation/translate/check` |
-| `src/models/Settings.php`, `src/templates/_settings.twig` | Settings (project config; API key as `$SUPERTEXT_API_KEY`) |
+| `src/models/Settings.php`, `src/templates/_settings.twig` | Settings (project config; API key as `$SUPERTEXT_API_KEY`; per site Supertext language, form of address and *Translation review* in `languages`) |
 | `src/records/TranslationRecord.php`, `src/migrations/` | Table `supertext_translations` (last Supertext translation per entry and site) and `supertext_state` (`m261014_000000_supertext_state`: the reporter's state) |
 | `src/translations/{de,fr,it}/supertext-translation.php` | German, French and Italian strings (keys are the English source strings) |
 | `src/helpers/Messages.php` | Shows a `SupertextException` from the API client in the user's language (by its `reason`), falling back to the client's English message |
@@ -92,6 +92,10 @@ Shared with the WordPress plugin and every other Supertext CMS plugin:
 4. `DELETE …/{file_id}` (files also expire after 24 h).
 
 Auth header: `Authorization: Supertext-Auth-Key <key>`. The header name must be `Authorization` (`Authentication` gets 403). Supertext shows the key with the prefix, so the client strips a pasted `Supertext-Auth-Key ` and always sends exactly one. Base URLs: `https://api.supertext.com/v1/` (live), `https://api.staging.supertext.com/v1/`, `https://api.testing.supertext.com/v1/`. `GET features` is the cost-free key check (*Test connection*, `translate/check`).
+
+User-Agent: `supertext-sdk-php … CraftCms-Supertext-Translation/<version>` (the plugin's version from Craft, as in the version reports).
+
+**Translation review** (`Settings::$languages[<site handle>]['review']`, a lightswitch per site in the Languages table, off by default): `Translator::translate()` takes `SupertextClient::forReview($settings->review($handle))` for each target site, a second SDK client with the same key, timeouts, transport and User-Agent whose base URL is `Settings::getReviewUrl()` (setting `reviewUrl`, default `SupertextClient::REVIEW_URL`, the translation proxy of [Supertext Localization Review](https://github.com/Supertext/Localization-Review-Supertext-Translation); `SUPERTEXT_REVIEW_URL` on the server wins, also when empty). It is created once per client and only when needed; each document is uploaded, polled, downloaded and deleted by the client that submitted it (`translateDocument()` is one round trip). The proxy speaks the same API v1, forwards to the live Supertext API with the plugin's key, stores every segment per key and serves reviewers' corrections on the next upload, so nothing else changes in the plugin. An empty review URL (or the same URL as the API) means `forReview()` always returns the direct client. The key check (Commando Center, *Test connection*), the version reports and the translation files never use the review service. No migration: sites without `review` in the project config are off.
 
 **Rate limit:** the API limits requests per second per key (HTTP 429). The client retries a 429 up to 4 times, waiting for `Retry-After` if sent, otherwise 1, 2, 4 and 8 seconds plus jitter. Target sites are translated one after the other.
 
@@ -167,7 +171,7 @@ composer install
 vendor/bin/phpunit
 ```
 
-- `tests/unit/SupertextClientTest.php`: the SDK wrapper: protocol, codes sent as given, auth header and prefix, 429 retries, error reasons (language pair and missing tone included), the key check, clean-up, segments (plain text, HTML, blank, missing) and splitting into several documents.
+- `tests/unit/SupertextClientTest.php`: the SDK wrapper: protocol, codes sent as given, auth header and prefix, 429 retries, error reasons (language pair and missing tone included), the key check, clean-up, segments (plain text, HTML, blank, missing) and splitting into several documents; Translation review: a review site's upload, status, download and delete go to the review URL with the same key while other sites go directly, the key check stays direct, the User-Agent carries the version, an empty review URL (or the API's own) turns it off, `REVIEW_URL` is the setting's default and `SUPERTEXT_REVIEW_URL` wins.
 - `tests/unit/LanguagesTest.php`: the per-site setting wins, exact matches, the SDK's defaults (`de` → `de-DE`, `es-ES` → `es`, `zh-CN` → `zh-Hans`), nothing else guessed (`en-IE`, `de-LI`, `gsw` → `unsupported_language`), sources from the same setting, the politeness list.
 - `tests/unit/ReportingTest.php`: with a fake transport and in-memory storage: `installed`/`settings_saved` after a save (fields, 3 s timeout, never the key), nothing due on a plain request, `upgraded`, a 401/403 reported once, *Test connection*, the `check` report, nothing sent with reports off or without a site URL, the one-hour back-off, broken storage, ping answers, the environment variable.
 - `tests/unit/FileExchangeTest.php`: translation files: the reference format round trip, the export uses the collector's keys and one job per site (unmapped sites with their language), HTML only for one site, nothing to export, import writes `ok` texts, `source_changed` only with the option, `untranslated`/`invalid_markup`/`missing` not written, other plugins, unknown references and the loading errors (`not_found`, `no_language`, `forbidden`, `already_translated`), files over the size limit refused.
@@ -205,7 +209,8 @@ The public demo is a container built from `demo/Dockerfile`: PHP 8.3 with Apache
 | `DEMO_ADMIN_EMAIL`, `DEMO_ADMIN_PASSWORD` | Administrator (the e-mail address is also the username) |
 | `DEMO_EDITOR_EMAIL`, `DEMO_EDITOR_PASSWORD` | Editor for automated tests and screenshots: member of **Editors** (control panel, every site, articles incl. other authors' entries, *Translate entries with Supertext*). Craft has no built-in editor role, so the demo creates this group. |
 | `SUPERTEXT_API_KEY` | Supertext key (the plugin setting references it) |
-| `SUPERTEXT_API_URL` | Optional, e.g. a stand-in API |
+| `SUPERTEXT_API_URL` | Optional, e.g. a stand-in API (to try the review service, switch on *Translation review* for a site instead) |
+| `SUPERTEXT_REVIEW_URL` | Optional: another review service than Supertext's (wins over *Review service address*; empty turns review off) |
 | `SUPERTEXT_VERSION_REPORTS` | Optional; `0` turns the version reports to Supertext off (default on: the demo reports like any installation) |
 | `PORT` | Port Apache listens on (Railway sets it) |
 
@@ -241,6 +246,8 @@ BASE_URL=http://127.0.0.1:8090 DEMO_ADMIN_EMAIL=… DEMO_ADMIN_PASSWORD=… \
   DEMO_EDITOR_EMAIL=… DEMO_EDITOR_PASSWORD=… npm run screenshots
 ```
 
+`06-settings.png` and `07-settings-languages.png` still show the settings page before *Review service address* and the *Translation review* column; regenerate them with the script on the next run against a demo.
+
 The script shows the live API address instead of the stand-in's on the settings page, and the public demo's address (`SITE_URL`) instead of the local one under *Sites*.
 
 ## Code quality and security checks
@@ -275,6 +282,7 @@ Planned: submit the package to Packagist and the Craft Plugin Store.
 - Translation runs inside the editor's request (one site after the other, up to *Timeout* each); the index action uses the queue.
 - Supported field types: Plain Text, CKEditor, Redactor, Matrix. Not yet: Table cells, Link field labels, SEO plugin fields, entries nested inside CKEditor fields, categories, global sets and assets (alt text).
 - Matrix fields that keep separate nested entries per site ("Only save entries to the site they were created in") are not translated.
+- Re-translating overwrites manual changes in the translated fields (with *Overwrite existing translations*). A translation memory and reviewers' corrections come from the review service when a site has *Translation review* on; corrections reach Craft only with the next translation (no push).
 - Not in the Plugin Store / on Packagist yet.
 - The language list is the SDK's (October 2026); a language Supertext adds later can be used before the SDK knows it only if the site already stores its code. A future version could read `GET features` live.
 - Human (professional) translation orders are not supported yet (the WordPress plugin has them).

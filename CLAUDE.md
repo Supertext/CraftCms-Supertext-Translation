@@ -86,6 +86,7 @@ Lessons from the live API, apply them here: header `Authorization: Supertext-Aut
 
 - Before committing: `vendor/bin/phpunit`, `vendor/bin/phpstan analyse`, PHP lint (`find src tests demo -name '*.php' -not -path '*/vendor/*' | xargs -n1 php -l`). CI also builds the demo image and runs `tests/demo-check.sh` against PostgreSQL and the stand-in.
 - Test UI changes in the demo project (`demo/project`, see `docs/DEVELOPER.md` → Local development) and regenerate the screenshots they affect (`tests/docs/screenshots.mjs`).
+- Translation review: per site in the Languages table of the settings page (`Settings::$languages[<handle>]['review']`, lightswitch in `_settings.twig`), address `reviewUrl` / `SUPERTEXT_REVIEW_URL`, second client from `SupertextClient::forReview()` (never for the key check, reports or files).
 - New settings go in `src/models/Settings.php`, `src/templates/_settings.twig`, the German, French and Italian strings in `src/translations/{de,fr,it}/` **and** the settings table in `docs/INSTALLATION.md`.
 - Field rules live in `src/services/Translator.php` (`collectUnits`, `kindOf`); keep "Field rules" in `docs/DEVELOPER.md` and "What is translated" in `docs/USER_GUIDE.md` in sync.
 - Keep `src/api/` free of Craft classes (unit tests run without Craft).

@@ -35,6 +35,17 @@
     placeholder: 'https://api.supertext.com/v1/',
 }) }}
 
+{{ forms.autosuggestField({
+    label: 'Review service address'|t('supertext-translation'),
+    instructions: 'Address of Supertext’s review service, used for sites with Translation review on (see Languages below). Leave it empty to turn Translation review off for every site. Only change it when Supertext gives you another address.'|t('supertext-translation'),
+    id: 'reviewUrl',
+    name: 'reviewUrl',
+    value: settings.reviewUrl,
+    suggestEnvVars: true,
+    placeholder: reviewDefault,
+    warning: reviewForced ? 'SUPERTEXT_REVIEW_URL is set on this server and is used instead of this setting.'|t('supertext-translation') : null,
+}) }}
+
 <div class="field" data-supertext-test>
     <div class="heading"><label>{{ 'API key check'|t('supertext-translation') }}</label></div>
     <div class="instructions"><p>{{ 'Checks the saved API key against the Supertext API. Nothing is translated or charged.'|t('supertext-translation') }}</p></div>
@@ -56,6 +67,10 @@
 
 <h2>{{ 'Languages'|t('supertext-translation') }}</h2>
 <p>{{ 'Choose the Supertext language of each site: Supertext translates into it, and from it when the site is the source. The list preselects the site’s language where Supertext offers it, else its usual variant (e.g. “de” → German (Germany) de-DE, “en” → English (United States) en-US); save to keep the choice. A site marked “— choose —” has no obvious Supertext language and isn’t translated until you choose one.'|t('supertext-translation') }}</p>
+<p>{{ 'Translation review: translations into a site with it on go through Supertext’s review service, so reviewers can check and correct them on the website with the Supertext Localization Review extension. Their corrections are used the next time the entry is translated.'|t('supertext-translation') }}</p>
+{% if not reviewAvailable %}
+    <p class="warning">{{ 'The review service address is empty: Translation review is off for every site.'|t('supertext-translation') }}</p>
+{% endif %}
 {% if settings.getErrors('languages') %}
     {% include '_includes/forms/errorList' with { errors: settings.getErrors('languages') } %}
 {% endif %}
@@ -66,6 +81,7 @@
             <th>{{ 'Language'|t('app') }}</th>
             <th>{{ 'Supertext language'|t('supertext-translation') }}</th>
             <th>{{ 'Form of address'|t('supertext-translation') }}</th>
+            <th>{{ 'Translation review'|t('supertext-translation') }}</th>
         </tr>
     </thead>
     <tbody>
@@ -115,6 +131,15 @@
                         }) }}
                     </div>
                     <p class="light" data-supertext-no-politeness{% if showPoliteness or info.target is null %} hidden{% endif %}>{{ 'Not offered for this language.'|t('supertext-translation') }}</p>
+                </td>
+                <td>
+                    {{ forms.lightswitch({
+                        name: 'languages[' ~ site.handle ~ '][review]',
+                        on: info.review,
+                        value: '1',
+                        disabled: info.reviewConfigured,
+                        containerAttributes: { aria: { label: 'Translation review'|t('supertext-translation') ~ ': ' ~ site.name } },
+                    }) }}
                 </td>
             </tr>
         {% endfor %}

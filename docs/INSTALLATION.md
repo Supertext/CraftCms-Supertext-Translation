@@ -8,7 +8,7 @@ For administrators who install and set up the plugin. Editors find their part in
 - A multi-site setup: one site per language, e.g. *English* (`en-US`), *Deutsch* (`de-CH`), *Français* (`fr-CH`)
 - Sections whose entries exist in those sites (*Propagation method* other than "Only save entries to the site they were created in")
 - A Supertext account with an API key (see [API key](#api-key))
-- The server must reach `https://api.supertext.com` over HTTPS
+- The server must reach `https://api.supertext.com` over HTTPS (and, for [Translation review](#translation-review), Supertext's review service)
 
 ## Install
 
@@ -71,6 +71,7 @@ In the plugin settings, the **Languages** table lists every site. Per site you s
 
   A site you haven't saved a choice for is translated with the same suggestion, so saving the page only makes it explicit. Saving checks every value against Supertext's list.
 - **Form of address**: *Formal* (Sie, vous), *Informal* (du, tu) or *Default*. Shown only for Supertext languages that offer the choice; English, Swiss German, Romansh, Albanian and Serbian show *Not offered for this language* (always *Default*).
+- **Translation review**: on or off (off by default), see [Translation review](#translation-review).
 
 Defaults for a site language that isn't a Supertext code itself (the Supertext SDK's, the same in every Supertext plugin):
 
@@ -82,13 +83,13 @@ Defaults for a site language that isn't a Supertext code itself (the Supertext S
 | A region of a language Supertext offers without region | the bare code: `es-ES`, `es-419` → `es`, `nl-NL` → `nl`, `nb-NO` → `nb` |
 | Anything else (`en-IE`, `de-LI`, `fr-BE`, `gsw`, `sr-RS`, `no`) | none: choose one |
 
-**Override from a config file:** `config/supertext-translation.php` can set the Supertext language (and form of address) per site handle, e.g. for automated setups; it wins over the settings page, where that site's select is then disabled with the note *Set in config/supertext-translation.php*:
+**Override from a config file:** `config/supertext-translation.php` can set the Supertext language (and form of address and *Translation review*) per site handle, e.g. for automated setups; it wins over the settings page, where that site's select is then disabled with the note *Set in config/supertext-translation.php* (a `review` set there disables that site's *Translation review* switch):
 
 ```php
 <?php
 return [
     'languages' => [
-        'german' => ['code' => 'de-CH', 'politeness' => 'more'],
+        'german' => ['code' => 'de-CH', 'politeness' => 'more', 'review' => true],
     ],
 ];
 ```
@@ -105,6 +106,20 @@ Supertext accepts exactly these codes (its `features` list, October 2026). The s
 **Updating from an older version:** `php craft up` converts the Supertext languages saved by older versions (which could hold other spellings) to the list's: `de_ch` → `de-CH`, `de` → `de-DE`, `es-ES` → `es`. A value that is no Supertext language (e.g. `xx-YY`) is removed, logged as a warning, and the site shows its select again (with the suggestion or *— choose —*).
 
 ![The Languages table: per site the language, its Supertext language chosen from Supertext's list and the form of address](images/07-settings-languages.png)
+
+## Translation review
+
+With **Translation review**, people check the translations on the website itself and correct them there: customers or Supertext linguists open the original and the translated page side by side in Chrome with the *Supertext Localization Review* extension and fix texts in a side panel. Their corrections come back into Craft.
+
+Turn it on per language for the site that is translated **into** (*Settings → Plugins → Supertext Translation → Languages*, switch **Translation review** on in that site's row, e.g. *Deutsch* → **Save**). Switch it off to turn it off again; nothing else changes.
+
+- Translations into that site then go through Supertext's review service instead of directly to Supertext. It answers exactly like Supertext and passes everything on with your API key, so billing, languages, form of address and error messages stay the same. Other sites keep going directly to Supertext.
+- The review service keeps every translation of your account. A text it has translated before gets the same translation again (without a new Supertext call), and once a reviewer has corrected it, the corrected text.
+- **Corrections arrive with the next translation:** after a review, translate the entries into that site again (*Translate with Supertext*, with *Overwrite existing translations*) to write the corrections into Craft. As always, overwriting replaces manual changes in the translated fields (the previous version stays in the revisions).
+- Reviewers get a review link for your site from Supertext; nothing to set up in Craft.
+- The review service works with keys of the **live** Supertext API. With *Supertext API* set to *Staging* or *Testing* (or a *Custom API address*), leave review off.
+- *Export for translation* and *Import translation* don't use the review service. The automatic API key check and *Test connection* still go directly to Supertext.
+- **Review service address** (in the plugin settings) is Supertext's review service by default. Leave it as it is unless Supertext gives you another address; empty turns Translation review off for every site. `SUPERTEXT_REVIEW_URL` in the server's environment wins over the setting (also when empty).
 
 ## Which fields are translated
 
@@ -130,8 +145,9 @@ All settings are in *Settings → Plugins → Supertext Translation* and stored 
 | --- | --- | --- |
 | API key | `$SUPERTEXT_API_KEY` | The key or an environment variable reference. Required. |
 | Supertext API | Live | *Live* (`https://api.supertext.com/v1/`), *Staging* or *Testing*. |
-| Custom API address | – | A different base URL (proxy, test server); may be an environment variable such as `$SUPERTEXT_API_URL`. Overrides *Supertext API*. |
-| Languages | the suggestion | Per site: Supertext language (a select of Supertext's list; preselected with the site's language or its default, `de` → `de-DE`; *— choose —* where there is none) and form of address (only where Supertext offers it). `config/supertext-translation.php` → `languages` overrides it. See [Languages](#languages). |
+| Custom API address | – | A different base URL (proxy, test server); may be an environment variable such as `$SUPERTEXT_API_URL`. Overrides *Supertext API*. For [Translation review](#translation-review) use the sites' switch instead. |
+| Review service address | Supertext's review service | Address of the review service for sites with *Translation review* on; may be an environment variable reference. Empty turns review off for every site. `SUPERTEXT_REVIEW_URL` on the server wins. Only change it when Supertext gives you another address. |
+| Languages | the suggestion | Per site: Supertext language (a select of Supertext's list; preselected with the site's language or its default, `de` → `de-DE`; *— choose —* where there is none), form of address (only where Supertext offers it) and *Translation review* (off by default, see [Translation review](#translation-review)). `config/supertext-translation.php` → `languages` overrides it. See [Languages](#languages). |
 | Timeout | 180 | Seconds to wait for the translation of one site. |
 | Send version information to Supertext | On | See [Version information and the API key check](#version-information-and-the-api-key-check). The environment variable `SUPERTEXT_VERSION_REPORTS=0` (or `false`, `off`, `no`) on the server turns it off regardless of the setting (`1` turns it on). |
 
@@ -173,6 +189,8 @@ The entry index action *Translate with Supertext* translates in Craft's queue. C
 | *The API key couldn't be checked because Supertext can't be reached* | The Craft server can't reach `api.supertext.com` (firewall, proxy, DNS). Translations need the same connection. |
 | *The language … has no Supertext language yet* / *Not mapped* in the Languages table | The site's language is no Supertext code and has no default (e.g. `en-IE`, `de-LI`, `gsw`). Choose its *Supertext language* under *Settings → Plugins → Supertext Translation → Languages* (see [Languages](#languages)). |
 | *Supertext offers no formal or informal tone for this language* | *Form of address* is *Formal* or *Informal* for a language without that choice (English, Swiss German, Romansh, Albanian, Serbian), saved by an older version or set in `config/supertext-translation.php`. Save the settings page once (it resets the hidden choice to *Default*) or fix the config file. |
+| *Authentication failed* only for sites with *Translation review* | The review service only works with keys of the live Supertext API: with *Staging*/*Testing* (or a *Custom API address*) leave review off. |
+| Reviewers' corrections don't show up in Craft | They arrive with the next translation: translate the entries into that site again with *Overwrite existing translations*. Check that the site's *Translation review* is on and *Review service address* isn't empty. |
 | *You are not allowed to edit the entry in this site.* | The editor lacks *Edit* permission for that site or the section's save permissions. |
 | *The entry is not available in this site.* | The section doesn't propagate the entry to that site. Enable the site in the entry's *Status* panel or change the section's propagation. |
 | *Supertext does not support this language pair (en → xx-YY)* | A code from `config/supertext-translation.php` that Supertext doesn't offer, or the same language as the source. Use a code from the list; the message shows the codes that were sent. |

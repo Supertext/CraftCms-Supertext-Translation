@@ -29,6 +29,8 @@ Click **Open** (or switch the site at the top left). The translation is saved in
 
 Change what you like and **Save**. The site's status (enabled or disabled) doesn't change: if a site's version was live before, the translation is live right away. To review first, disable the entry for that site, translate, review, then enable it.
 
+**Translation review:** if your administrator turned on *Translation review* for a site, reviewers (your colleagues or Supertext linguists) check and correct the translations on the website. Their corrections come into Craft the next time you translate the entry into that site: after a review, translate it again with *Overwrite existing translations*. Texts reviewed once keep their corrected wording in later translations.
+
 Every translation is saved as a new **revision** with the note *Translated with Supertext from English*. To undo a translation, open the revision menu (*Current*, next to the entry's name at the top), choose the earlier revision and click *Revert content from this revision*.
 
 ## Translate again or update a translation

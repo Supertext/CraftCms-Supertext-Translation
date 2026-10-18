@@ -20,6 +20,7 @@ use craft\events\RegisterUserPermissionsEvent;
 use craft\services\UserPermissions;
 use supertext\crafttranslation\api\Languages;
 use supertext\crafttranslation\api\Reporting as ApiReporting;
+use supertext\crafttranslation\api\SupertextClient;
 use supertext\crafttranslation\elements\actions\TranslateWithSupertext;
 use supertext\crafttranslation\helpers\Messages;
 use supertext\crafttranslation\models\Settings;
@@ -145,6 +146,8 @@ class Plugin extends BasePlugin
                 'configured' => $configured !== '',
                 'target' => $target,
                 'politenessSupported' => $target !== null ? Languages::supportsPoliteness($target) : null,
+                'review' => $settings->review($site->handle),
+                'reviewConfigured' => Settings::configuredReview($site->handle) !== null,
             ];
         }
         $check = $reporting->lastCheck();
@@ -154,6 +157,9 @@ class Plugin extends BasePlugin
             'sites' => Craft::$app->getSites()->getAllSites(),
             'languages' => $languages,
             'targets' => Languages::options(Craft::$app->language),
+            'reviewAvailable' => $settings->getReviewUrl() !== '',
+            'reviewDefault' => SupertextClient::REVIEW_URL,
+            'reviewForced' => Settings::reviewUrlFromEnvironment() !== null,
             'check' => $check,
             'checkText' => $check !== null ? Messages::keyCheck($check) : null,
             'reportsEnabled' => $reporting->enabled(),
