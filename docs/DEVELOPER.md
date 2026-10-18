@@ -33,6 +33,7 @@ apply(): set the values on the entry (and nested entries) in the target site, sa
 | `lib/supertext-plugin-health/` | Bundled copy of Supertext Plugin Health (PHP), namespace `supertext\crafttranslation\pluginhealth` (see *Supertext Plugin Health*) |
 | `src/services/Translator.php` | Field rules, "already translated" check, translation, saving |
 | `src/controllers/TranslateController.php` | Control panel actions `info`, `entry`, `test-connection` (admins: the API key check) |
+| `src/controllers/FilesController.php`, `src/api/FileExchange.php` | Export for translation / Import translation (XLIFF 1.2 and HTML files, see *Translation files*) |
 | `src/controllers/PingController.php` | Public `actions/supertext-translation/ping` for the Commando Center |
 | `src/services/Reporting.php` | Commando Center on Craft: site URL, versions, when the reporter runs, its state in the table `supertext_state` |
 | `src/elements/actions/TranslateWithSupertext.php`, `src/jobs/TranslateEntryJob.php` | Bulk translation in the queue (missing sites only) |
@@ -59,6 +60,28 @@ Each value is one `data-st-id` element, so a whole rich-text field (all its para
 
 **Saving**: values are set on the target site's elements and saved with `Elements::saveElement()` (nested entries first). Saving the entry creates a revision with notes; the site's enabled status is not changed.
 
+## Translation files
+
+*Export for translation* and *Import translation* in the Supertext box (SDK 0.5.0, `supertext\crafttranslation\sdk\Files\TranslationFiles`; SDK integration guide → *Translation files: XLIFF and HTML*). Nothing calls the API.
+
+```
+translate.js (Export / Import sections of the box)
+   │ POST actions/supertext-translation/files/export  { entryId, siteId, targetSiteIds[], format }  → file (attachment)
+   │ POST actions/supertext-translation/files/import  multipart { file, includeChanged, overwrite } → { results }
+   ▼
+controllers/FilesController ── plugin permission; uploads > 10 MB refused before reading, read in memory only
+   ▼
+services/Translator::exportFile() / importFile() ── Craft side: entries, sites, permissions, write-back
+   ▼
+api/FileExchange ── no Craft classes (tests/unit/FileExchangeTest.php): reference, jobs, import statuses
+```
+
+- **Job:** one entry from its source site into one target site. `plugin` = `CraftCms-Supertext-Translation`; `reference` = `entry:<entry id>:site-<source site id>:site-<target site id>`, e.g. `entry:5:site-1:site-3` (`FileExchange::reference()` / `parseReference()`); `sourceLanguage`/`targetLanguage` = `Settings::sourceCode()`/`targetCodeOrNull()` (the site's Supertext language, exact match, default), else the site language with `_` → `-` (an unmapped site doesn't block an export).
+- **Segments:** exactly the API translation's units (`collectUnits()`), via `Translator::fileSegments()`, keyed `<element id>.<title|slug|field handle>` (nested Matrix entries have their own element id; slugs as words, HTML only for rich-text fields).
+- **Export:** XLIFF: one job per selected site, `craft-<entry id>-<site handle>.xlf` (`craft-<entry id>.xlf` for several sites), `application/x-xliff+xml`; HTML: exactly one site, `craft-<entry id>-<site handle>.html`, `text/html; charset=utf-8`; as attachment (`Response::sendContentAsFile()`), fetched by the box and saved through a blob link. Nothing to translate → *Nothing to translate.*, no file.
+- **Import:** `FileExchange::read()` (errors `invalid_file`, `missing_metadata`, `too_large`), then per job `FileExchange::import()`: `plugin` must be this plugin (`other_system`), the reference must parse (`not_found`); `Translator` loads the entry in the source site (`not_found`), the target site and the entry in it (`no_language`), checks the permission and `canSave()` (`forbidden`) and the overwrite rule of API translations (`already_translated` when the site has its own text and *Overwrite existing translations* is off), and collects the current units. `importTranslations()` compares them: `ok` is written, `source_changed` only with *Also import texts whose source changed since the export*, `untranslated`/`invalid_markup`/`missing` never. Messages: `Messages::fileError()`.
+- **Write-back:** the imported texts are mapped back to the units' indexes and go through `apply()` (nested entries first, revision note *Translated with Supertext from …*, slug regenerated, empty texts never written) and `remember()`, as for API translations. Units without an imported text keep their value in the target site.
+
 ## Supertext API protocol
 
 Shared with the WordPress plugin and every other Supertext CMS plugin:
@@ -74,9 +97,9 @@ Auth header: `Authorization: Supertext-Auth-Key <key>`. The header name must be 
 
 ## Supertext SDK
 
-The protocol above, the retries, the language list, the API key check (`Client::checkApiKey()`, `Protocol::apiKeyFingerprint()`) and the `data-st-id` document come from the official Supertext PHP SDK ([Supertext/Supertext-API-SDK-and-Guide](https://github.com/Supertext/Supertext-API-SDK-and-Guide), 0.4.0): it provides the client and the key check. The version reports are no longer in the SDK (since 0.3.0) but in *Supertext Plugin Health* (below). The plugin ships a copy in `lib/supertext-sdk/` with its namespace changed from `Supertext\Sdk` to `supertext\crafttranslation\sdk` (everything that talks to the API is in its `V1` sub-namespace, `supertext\crafttranslation\sdk\V1`, folder `src/V1/`; Composer autoloads it from the plugin's `composer.json`), so sites install nothing extra and another package that requires the SDK itself can't clash with it. `lib/supertext-sdk/COMMIT` names the SDK revision.
+The protocol above, the retries, the language list, the API key check (`Client::checkApiKey()`, `Protocol::apiKeyFingerprint()`) and the `data-st-id` document come from the official Supertext PHP SDK ([Supertext/Supertext-API-SDK-and-Guide](https://github.com/Supertext/Supertext-API-SDK-and-Guide), 0.5.0): it provides the client, the key check and the translation files (`Files\TranslationFiles`, no API calls). The version reports are no longer in the SDK (since 0.3.0) but in *Supertext Plugin Health* (below). The plugin ships a copy in `lib/supertext-sdk/` with its namespace changed from `Supertext\Sdk` to `supertext\crafttranslation\sdk` (everything that talks to the API is in its `V1` sub-namespace, `supertext\crafttranslation\sdk\V1`, folder `src/V1/`; Composer autoloads it from the plugin's `composer.json`), so sites install nothing extra and another package that requires the SDK itself can't clash with it. `lib/supertext-sdk/COMMIT` names the SDK revision, `VERSION` its version.
 
-- Never edit `lib/supertext-sdk/`. Fix the SDK in its repository, then run `scripts/vendor-sdk.sh [ref]` (default `main`; `SDK_DIR=/path/to/clone` uses a local clone) and the tests. The script copies `sdk/php/src` with its subfolders and rewrites every `Supertext\Sdk\…` namespace (`V1` and `Http` included).
+- Never edit `lib/supertext-sdk/`. Fix the SDK in its repository, then run `scripts/vendor-sdk.sh [ref]` (default `main`; `SDK_DIR=/path/to/clone` uses a local clone) and the tests. The script copies `sdk/php/src` with its subfolders and rewrites every `Supertext\Sdk\…` namespace (`V1`, `Http` and `Files` included).
 - `src/api/SupertextClient.php` keeps the plugin's interface (`translateDocument`, `translateSegments`, `validateApiKey`, transport callable) and turns every SDK error code into a `SupertextException` reason (`REASONS`); `helpers/Messages::of()` translates it. A new SDK error code needs a reason there, a `match` arm in `Messages` and its strings in `de`, `fr` and `it`.
 - The demo installs the plugin from `demo/project/composer.lock`, which records the plugin's autoload paths: after changing `autoload` in `composer.json`, run `composer update supertext/craft-supertext-translation --no-install` in `demo/project` and commit the lock (otherwise the demo can't load the SDK classes).
 - PHPStan analyses `src/` only; the SDK has its own checks in its repository.
@@ -145,8 +168,9 @@ vendor/bin/phpunit
 ```
 
 - `tests/unit/SupertextClientTest.php`: the SDK wrapper: protocol, codes sent as given, auth header and prefix, 429 retries, error reasons (language pair and missing tone included), the key check, clean-up, segments (plain text, HTML, blank, missing) and splitting into several documents.
-- `tests/unit/LanguagesTest.php`: the per-site setting wins, exact matches, no default regions (`de`, `es-ES`, `zh-CN` → `unsupported_language`), sources from the same setting, the politeness list.
+- `tests/unit/LanguagesTest.php`: the per-site setting wins, exact matches, the SDK's defaults (`de` → `de-DE`, `es-ES` → `es`, `zh-CN` → `zh-Hans`), nothing else guessed (`en-IE`, `de-LI`, `gsw` → `unsupported_language`), sources from the same setting, the politeness list.
 - `tests/unit/ReportingTest.php`: with a fake transport and in-memory storage: `installed`/`settings_saved` after a save (fields, 3 s timeout, never the key), nothing due on a plain request, `upgraded`, a 401/403 reported once, *Test connection*, the `check` report, nothing sent with reports off or without a site URL, the one-hour back-off, broken storage, ping answers, the environment variable.
+- `tests/unit/FileExchangeTest.php`: translation files: the reference format round trip, the export uses the collector's keys and one job per site (unmapped sites with their language), HTML only for one site, nothing to export, import writes `ok` texts, `source_changed` only with the option, `untranslated`/`invalid_markup`/`missing` not written, other plugins, unknown references and the loading errors (`not_found`, `no_language`, `forbidden`, `already_translated`), files over the size limit refused.
 - `tests/unit/TranslationsTest.php`: every string passed to `Craft::t('supertext-translation', …)`, `|t('supertext-translation')` or listed in `TranslateAsset::MESSAGES` is in the German, French and Italian files (and nothing else is), with the same placeholders, tags and URLs; every `t()` in the edit-page JavaScript is in `TranslateAsset::MESSAGES`.
 - `tests/demo-check.sh` (CI): the demo image on PostgreSQL with the stand-in, started twice: demo accounts created once and never duplicated, no passwords in the log, the Editors group, `translate/check`, translation of the sample article into three sites (title, ASCII slug, rich text markup, nested Matrix entries), the skip on a second run, the German front-end page, and the Commando Center: the public ping (200 and 400) and the `installed` and `check` reports received by the stand-in (`SUPERTEXT_REPORT_URL`), with the plugin, Craft version and callback URL and never the key.
 

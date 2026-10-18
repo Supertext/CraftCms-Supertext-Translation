@@ -74,6 +74,27 @@ final class Messages
         };
     }
 
+    /**
+     * Errors of Export for translation / Import translation: the SDK's TranslationFileError codes
+     * and FileExchange's import errors.
+     *
+     * @param array<string, string> $params `plugin`, `language`
+     */
+    public static function fileError(string $code, array $params = []): string
+    {
+        return match ($code) {
+            'invalid_file' => Craft::t('supertext-translation', 'This file isn’t a valid XLIFF or HTML translation file.'),
+            'missing_metadata' => Craft::t('supertext-translation', 'This file wasn’t exported by the Supertext plugin, or its header was removed.'),
+            'too_large' => Craft::t('supertext-translation', 'The file is too large (at most 10 MB).'),
+            'other_system' => Craft::t('supertext-translation', 'This file belongs to another system ({plugin}).', $params),
+            'not_found' => Craft::t('supertext-translation', 'The entry this file was exported from no longer exists.'),
+            'no_language' => Craft::t('supertext-translation', 'The site has no language {language}.', $params),
+            'forbidden' => Craft::t('supertext-translation', 'You are not allowed to edit the entry in this site.'),
+            'already_translated' => Craft::t('supertext-translation', 'This site already has its own text. Tick “Overwrite existing translations” to replace it.'),
+            default => Craft::t('supertext-translation', 'Nothing to translate.'),
+        };
+    }
+
     public static function noApiKey(): string
     {
         return Craft::t('supertext-translation', 'No Supertext API key is configured. Set it in the plugin settings (usually as $SUPERTEXT_API_KEY). No Supertext account yet? Create one at {signupUrl}. Generate your API key at {url} (requires the Admin role).', [

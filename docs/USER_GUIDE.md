@@ -42,6 +42,38 @@ Sites that already have their own text are not ticked, and show **Already transl
 
 "Its own text" means: at least one translatable field differs from the source site.
 
+## Translate with a file (XLIFF or HTML)
+
+Instead of translating with Supertext's API, you can download an entry's texts as a file, have them translated elsewhere (a translator, a translation tool such as Trados, memoQ or Phrase, or Supertext's web app) and import the translated file again. The translations are saved exactly like a translation with Supertext: in the target site's version of the entry, as a new revision.
+
+**Export for translation:** open the entry in the site you translate **from** (save your changes first). In the Supertext box, open **Export for translation**.
+
+1. Choose the **File format**:
+   - **XLIFF 1.2 (for translation tools)**: the better choice for translators and translation tools; bold text, links and other formatting appear as protected tags. One file can hold several sites.
+   - **HTML (one language per file)**: for Supertext's web app or anyone who translates HTML. Tick exactly one site.
+2. Tick the sites under **Into** and click **Download file**. The file is called e.g. `craft-12-fr.xlf` (entry ID and site handle; `craft-12.xlf` for several sites).
+
+The file holds the same texts a translation with Supertext would send: title, slug (as words), Plain Text and rich text fields, and the entries inside Matrix fields. An entry without texts gives *Nothing to translate.*
+
+**Send it for translation.** Translators must keep the file's structure: in an HTML file the head (the `supertext:` meta tags) and the `data-st-id` attributes must stay as they are. An HTML file can't mark a text as untranslated: imported unchanged, it writes the source text into the target site.
+
+**Import translation:** in the Supertext box of any entry (the file says which entry and sites it belongs to), open **Import translation**, choose the **Translated file (XLIFF or HTML)** and click **Import translation**. Files up to 10 MB.
+
+- **Also import texts whose source changed since the export** (off by default): texts edited in the source site after the export are skipped unless you tick this.
+- **Overwrite existing translations** (off by default): like translating with Supertext, a site that already has its own text is skipped (*This site already has its own text …*) unless you tick this.
+
+The summary shows, per entry and site:
+
+| Line | Meaning |
+| --- | --- |
+| *Imported: n* | Texts saved in the target site. |
+| *Skipped, source changed since the export: n* | The source text was edited after the export; tick the option above to import them anyway, or export again. |
+| *Not translated in the file: n* | The file has no translation for these texts (XLIFF). |
+| *Formatting changed, not imported: n* | The translation broke or added formatting (tags); fix it in the file or translate these texts again. |
+| *Not in the file: n* | Texts added since the export; translate them with Supertext or export again. |
+
+Texts that weren't imported keep their current value in the target site. Errors: *This file isn't a valid XLIFF or HTML translation file*, *This file wasn't exported by the Supertext plugin, or its header was removed*, *The file is too large (at most 10 MB)*, *This file belongs to another system (…)* (exported by another Supertext plugin), *The entry this file was exported from no longer exists*, *The site has no language …* (the site was deleted or the entry isn't available in it any more), *You are not allowed to edit the entry in this site.*
+
 ## Translate many entries at once
 
 In the entry list, select entries, open the **actions menu** (gear icon) and choose **Translate with Supertext**. Each selected entry is translated from the site the list shows into all its other sites, in the background. Sites that already have their own text are skipped; to overwrite them, use the box on the entry page.

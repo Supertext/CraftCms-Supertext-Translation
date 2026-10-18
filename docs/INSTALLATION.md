@@ -120,6 +120,8 @@ Editors need, in their user group (*Settings → Users → User Groups*):
 
 The plugin checks that the editor may save the entry in every target site before anything is sent to Supertext. Sites they can't edit don't appear in the Supertext box.
 
+**Export for translation / Import translation** (XLIFF 1.2 or HTML files, in the Supertext box) need the same permission; an import saves only into sites where the editor may save the entry, each entry and site in the file is checked. Uploads are limited to 10 MB (PHP's `upload_max_filesize` and `post_max_size` must allow that much, or larger files are refused earlier) and are only read in memory, never stored. There is nothing to configure, and no API key is needed for files.
+
 ## Settings
 
 All settings are in *Settings → Plugins → Supertext Translation* and stored in the project config (change them where admin changes are allowed, e.g. in development, and deploy them).
@@ -178,6 +180,8 @@ The entry index action *Translate with Supertext* translates in Craft's queue. C
 | *Too many requests to Supertext* | The API's per-second limit was hit repeatedly although the plugin retries. Try again shortly. |
 | *Your Supertext translation limit is exceeded.* | The Supertext subscription's quota is used up. |
 | *Timed out waiting for the Supertext translation* | Very long content. Raise *Timeout* (and PHP's `max_execution_time`). |
+| *The file is too large (at most 10 MB)* for a smaller file | PHP's `upload_max_filesize` or `post_max_size` is lower than the file; raise them. |
+| *This file belongs to another system* / *This file wasn't exported by the Supertext plugin* | The file comes from another Supertext plugin, or the translation tool removed the file's header (HTML: the `supertext:` meta tags; XLIFF: the `<file>` attributes). Export again and keep them. |
 | A field isn't translated | Its Translation Method is *Not translatable*, or its type isn't supported (see above). |
 | Bulk translations don't run | The queue isn't running (see *Background translation*). Failed jobs show the reason in *Utilities → Queue Manager*. |
 
