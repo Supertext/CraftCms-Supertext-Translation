@@ -178,7 +178,7 @@ vendor/bin/phpunit
 - `tests/unit/TranslationsTest.php`: every string passed to `Craft::t('supertext-translation', …)`, `|t('supertext-translation')` or listed in `TranslateAsset::MESSAGES` is in the German, French and Italian files (and nothing else is), with the same placeholders, tags and URLs; every `t()` in the edit-page JavaScript is in `TranslateAsset::MESSAGES`.
 - `tests/demo-check.sh` (CI): the demo image on PostgreSQL with the stand-in, started twice: demo accounts created once and never duplicated, no passwords in the log, the Editors group, `translate/check`, translation of the sample article into three sites (title, ASCII slug, rich text markup, nested Matrix entries), the skip on a second run, the German front-end page, and the Commando Center: the public ping (200 and 400) and the `installed` and `check` reports received by the stand-in (`SUPERTEXT_REPORT_URL`), with the plugin, Craft version and callback URL and never the key.
 
-CI (`.github/workflows/ci.yml`) on every push and pull request: **test** (PHP 8.2, 8.3 and 8.4: lint and PHPUnit), **phpstan** (see *Code quality and security checks*) and **demo** (builds `demo/Dockerfile`, runs `tests/demo-check.sh`).
+CI (`.github/workflows/ci.yml`) on every push and pull request: **test** (PHP 8.2, 8.3, 8.4 and 8.5: lint and PHPUnit), **phpstan** (see *Code quality and security checks*) and **demo** (builds `demo/Dockerfile`, runs `tests/demo-check.sh`).
 
 ## Demo (Railway)
 
